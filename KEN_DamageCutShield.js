@@ -1,7 +1,8 @@
 /*
 ----------------------------------------------------------------------------
- KEN_DamageCutState
+ KEN_DamageCutState v1.0.0
 ----------------------------------------------------------------------------
+ (C)2024 KEN
  This software is released under the MIT License.
  http://opensource.org/licenses/mit-license.php
 ----------------------------------------------------------------------------
@@ -11,34 +12,45 @@
  * @target MZ
  * @plugindesc ダメージカットを行うシールドを提供します
  * @author KEN
+ * @version 0.8.0
+ * @url https://github.com/t-kendama/RPGMakerMZ/blob/main/KEN_DamageCutShield.js
  * 
  * @help
  * ダメージカットを行うシールドを提供します。
  * 
+ *    --------------------    概要    --------------------
  * 【シールドの基本的な仕様】
- * シールドが付与されているバトラーが攻撃を受けたとき、
+ * シールドが付与されているバトラーがHPダメージの攻撃を受けたとき、
  * シールドを消費してダメージを防ぐことができます。
  * ダメージがシールド値を超えた場合、超過した分だけ
  * ダメージを受けます。
  * 例．ダメージが100、シールド30の場合、70ダメージを受けます。
  * 
- * シールドは敵からダメージを受けない限り消費しませんが、
- * 後述のステート設定で持続ターン数を設定できます。
+ * シールドはダメージを受けない限り解除されませんが、後述のステート設定で
+ * 持続ターン数を設定できます。
  * 
+ * 【細かい仕様】
+ * ・イベントコマンドの「HPの増減」でHPを減らした場合は、シールドの耐久値に
+ * 関わらず処理が実行されます。
+ * 
+ * 【シールドの描画】
+ * シールドはHPゲージの上に描画します。
+ * またシールドが付与されている間、アイコンおよび持続ターン数を描画できます。
+ * 
+ *    --------------------    使い方    --------------------
+ * 本プラグインは事前にステート設定が必要です。
  * 
  * 【ステート設定】
- * シールドが付与されたとき、プラグインパラメータに設定したIDの
- * ステートが連動して付与されます。
+ * シールドが付与されたとき、プラグインパラメータに設定したIDのステートが
+ * 連動して付与されます。
+ * ※このステートは必ず設定してください
  * 
- * シールドの持続ターンはステートIDの「自動解除のタイミング」に
- * 依存します。
+ * シールドの持続ターンはステートIDの「自動解除のタイミング」に依存します。
+ * 「自動解除のタイミング」を「なし」に設定した場合、シールドは自動解除
+ * されなくなります。
  * 
- * 「自動解除のタイミング」を「なし」に設定した場合、
- * シールドは自動解除されなくなります。
- * 
- * 
- * 　【使い方（メモ欄の設定）】
- * メモ欄に以下の記述を行います。
+ * 【シールドの付与】
+ * アイテムまたはスキル欄のメモ欄に設定します。
  * 
  * <damageCutShield: 数値 or 数式>
  * 記述欄：アイテム・スキル
@@ -49,6 +61,7 @@
  * <damageCutShield: -50> シールドが50減少します
  * <damageCutShield: a.mat> スキル使用者の魔力分のシールドが増加します
  * 
+ * 【その他の設定】
  * <penetrateShield>
  * 記述欄：アイテム・スキル
  * このタグが記述されたアイテム・スキルはシールドを無視してダメージを与えます。
@@ -72,6 +85,36 @@
  * このタグが指定された装備・ステートが付与されている場合、
  * シールドが得られなくなります。
  * 
+ * <damageWithShield: 数値>
+ * 記述欄：ステート
+ * シールド耐久値を減らすダメージを受けます。
+ * 継続的にダメージを与えるステートを実装するときに使用します。
+ * 
+ * 記述例．
+ * <damageWithShield: 20> ターン経過時、20ダメージを与えます
+ * <damageWithShield: a.mhp * 0.1> ターン経過時、バトラーの最大HP10%のダメージを与えます
+ * 
+ * --------------------    スクリプト    --------------------
+ * ・シールド耐久値を取得
+ * $gameActors.actor(アクターID).damageCutShield()
+ * $gameTroop.members()[エネミーのインデックス].damageCutShield()
+ * 
+ * ・シールドを増加（マイナス指定可）
+ * $gameActors.actor(アクターID).gainDamageCutShield(効果量)
+ * $gameTroop.members()[エネミーのインデックス].damageCutShield(効果量)
+ * 
+ * ・シールド状態を解除
+ * $gameActors.actor(アクターID).clearDamageCutShield()
+ * $gameTroop.members()[エネミーのインデックス].clearDamageCutShield()
+ * 
+ * 
+ * --------------------    上級者向け設定について    --------------------
+ * 本プラグインはエネミーのシールドを描画する機能を持ちません。
+ * ※内部的にはシールドは適用されます
+ * 
+ * エネミーのシールドを描画する場合は他プラグインとの併用をご検討ください。
+ * シールドの描画に関する細かい挙動については対応しかねます。ご了承ください。
+ *  
  * 
  * 
  * @param stateID
@@ -369,7 +412,7 @@
         this.displayBlockedDamage(target);        // 処理追加
         this.displayDamage(target);
         this.displayAffectedStatus(target);
-        this.displayBreakDamageCutShield(target)  // 未使用
+        this.displayBreakDamageCutShield(target)  // 処理追加
         this.displayFailure(target);
         this.push("waitForNewLine");
         this.push("popBaseLine");
@@ -457,6 +500,9 @@
     if(value > 0) {
       this.addDamageCutShieldState();
     }
+    if(this._damageCutShield <= 0) {
+      this.eraseState(STATEID_Shield);
+    }
   };
 
   // シールド最大値
@@ -465,7 +511,7 @@
     return Math.min(value, MAX_Shield);
   };
 
-  // シールド値をクリア
+  // シールド値を代入
   Game_BattlerBase.prototype.setDamageCutShield = function(value) {
     this._damageCutShield = value;
   };
@@ -516,8 +562,9 @@
   const _KEN_Game_Battler_onTurnEnd = Game_Battler.prototype.onTurnEnd;
   Game_Battler.prototype.onTurnEnd = function(){
     _KEN_Game_Battler_onTurnEnd.call(this);
+    this.reduceHpWithShield();      // スリップダメージ処理
     if(!this.isStateAffected(STATEID_Shield)) {
-      this.setDamageCutShield(0);
+      this.setDamageCutShield(0);   // シールドがなくなった場合ステートを解除
     }
   };
 
@@ -550,6 +597,54 @@
 
     return false;
   };
+
+  // シールドを適用したHPダメージ
+  Game_Battler.prototype.executeHpDamageWithShield = function(value) {
+    const actualDamage = Math.max(value - this.damageCutShield(), 0);
+    this.gainDamageCutShield(-value);
+    this._result.hpDamage = actualDamage;
+    if (actualDamage > 0) {
+      this._result.hpAffected = true;      
+    }
+    this.setHp(this.hp - actualDamage);
+  };
+
+  // シールド状態を適用したスリップダメージ
+  Game_Battler.prototype.reduceHpWithShield = function() {
+    this.executeHpDamageWithShield(this.slipDamageWithShield());
+  };
+  
+  // スリップダメージ値の取得
+  Game_Battler.prototype.slipDamageWithShield = function() {
+    let value = 0;
+    // エネミーの場合は処理しない
+    if( this.isActor() ) {
+      for (const item of this.equips()) {
+        if (item) {
+          if(item.meta.DamageWithShield) {
+            value += this.itemSlipDamage(item.meta.DamageWithShield);
+          }
+        }
+      }
+    }    
+    for (const state of this.states()) {
+      if(state.meta.DamageWithShield) {
+        value += this.itemSlipDamage(state.meta.DamageWithShield);
+      }      
+    }
+    return value;
+  };
+
+  Game_Battler.prototype.itemSlipDamage = function(formula){
+    try {
+      const a = this;
+      const value = Math.max( eval(formula), 0);
+      return isNaN(value) ? 0 : value;
+    } catch (e) {
+      return 0;
+    }
+  };
+
 
   //====================================================================
   // ●Game_Action
@@ -586,11 +681,11 @@
 
   const _KEN_Game_Action_applyItemUserEffect = Game_Action.prototype.applyItemUserEffect;
   Game_Action.prototype.applyItemUserEffect = function(target) {
-    this.applyItemdamageCutShield(target);
+    this.applyItemDamageCutShield(target);
     _KEN_Game_Action_applyItemUserEffect.call(this);
   };
 
-  Game_Action.prototype.applyItemdamageCutShield = function(target) {
+  Game_Action.prototype.applyItemDamageCutShield = function(target) {
     const item = this.item();
     const value = this.evalMetaFormula(target, item.meta.damageCutShield);
     if(value != 0) {
@@ -873,7 +968,7 @@
   Sprite_Gauge.prototype.setupValueFontShield = function() {
     this.bitmap.fontFace = this.valueFontFace();
     this.bitmap.fontSize = this.valueFontSizeShield();
-    this.bitmap.textColor = this.valueColor();
+    this.bitmap.textColor = ColorManager.normalColor();
     this.bitmap.outlineColor = this.valueOutlineColor();
     this.bitmap.outlineWidth = this.valueOutlineWidth();
   };
