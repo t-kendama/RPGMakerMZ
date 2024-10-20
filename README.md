@@ -8,8 +8,8 @@ RPGツクールMZ用のプラグインです。
 | KEN_DamageCutShield.js | ダメージカットを行うプラグイン  |
 
 ## 規約
-MITライセンスに準拠します。
+[MITライセンス](https://github.com/t-kendama/RPGMakerMZ/blob/main/LICENSE)に準拠します。
 
 ## 作者連絡先
-X: https://x.com/t_kendama
-Github: https://github.com/t-kendama/
+(X): https://x.com/t_kendama  
+(Github): https://github.com/t-kendama/
