@@ -1,18 +1,23 @@
 /*
 ----------------------------------------------------------------------------
- KEN_DamageCutState v0.8.1
+ KEN_DamageCutState v0.8.2
 ----------------------------------------------------------------------------
  (C)2024 KEN
  This software is released under the MIT License.
  http://opensource.org/licenses/mit-license.php
 ----------------------------------------------------------------------------
-
+ Version
+ 0.8.2 2024/10/20 シールド獲得時のバトルログで耐久値が表示されない不具合修正
+                  被ダメージ時にシールド減少量を表示する機能追加
+ 0.8.1 2024/10/20 スリップダメージが少数になる不具合修正
+ 0.8.0 2024/10/20 ベータ版公開
+----------------------------------------------------------------------------
 */
 /*:
  * @target MZ
  * @plugindesc ダメージカットを行うシールドを提供します
  * @author KEN
- * @version 0.8.1
+ * @version 0.8.2
  * @url https://github.com/t-kendama/RPGMakerMZ/blob/main/KEN_DamageCutShield.js
  * 
  * @help
@@ -115,48 +120,61 @@
  * エネミーのシールドを描画する場合は他プラグインとの併用をご検討ください。
  * シールドの描画に関する細かい挙動については対応しかねます。ご了承ください。
  *  
- * 
+ * @param generalConfig
+ * @text 基本設定
+ * @desc 基本設定です ※この項目は使用しません
  * 
  * @param stateID
  * @text ステートID
  * @desc シールドを得た場合、このステートがバトラーに付与されます 必ず2以上の値を設定してください
  * @type state
  * @default 2
+ * @parent generalConfig
  * 
  * @param maxShieldValue
  * @text シールド最大値
  * @desc シールドの最大値を設定します ※0にすると制限が無くなります
  * @type number
  * @default 99999
+ * @parent generalConfig
+ * 
+ * @param seBlockDamage
+ * @text ダメージブロック効果音
+ * @desc シールドでダメージを防いだときの効果音です
+ * @type struct<SE>
+ * @parent generalConfig
+ * 
+ * @param battleLogConfig
+ * @text バトルログ設定
+ * @desc バトルログに関する設定です ※この項目は使用しません
  * 
  * @param msgGetShield
  * @text シールド獲得メッセージ
  * @desc シールドを獲得したときのメッセージ　%1:ターゲット名 %2:シールド獲得量 %3:シールド耐久値
  * @type string
  * @default %1は%2のシールドを得た！(シールド耐久値%3)
+ * @parent battleLogConfig
  * 
  * @param msgLossShield
  * @text シールド減少メッセージ
- * @desc シールドが減少したときのメッセージ　%1:ターゲット名 %2:シールド獲得量 %3:シールド耐久値
+ * @desc シールド減少時のメッセージ　%1:ターゲット名 %2:シールド減少量 %3:シールド耐久値
  * @type string
  * @default %1のシールドが%2減少した！(シールド耐久値%3)
+ * @parent battleLogConfig
  * 
  * @param msgBreakShield
  * @text シールド破壊メッセージ
  * @desc シールドが破壊（0になった）されたときのメッセージ 空欄にすると表示しません
  * @type string
  * @default %1のシールドが破壊された！
+ * @parent battleLogConfig
  * 
  * @param msgBlockedDamage
  * @text 被ダメージのメッセージ
- * @desc シールドが付与状態でダメージを受けたときのメッセージです　%1:ターゲット名 %2:シールド耐久値
+ * @desc シールドが付与状態でダメージを受けたときのメッセージです　%1:ターゲット名 %2:シールド減少値 %3:シールド耐久値
  * @type string
- * @default %1はダメージを防いだ！(シールド耐久値%2)
- * 
- * @param seBlockDamage
- * @text ダメージブロック効果音
- * @desc シールドでダメージを防いだときの効果音です
- * @type struct<SE>
+ * @default %1のシールドが%2減少した！シールド耐久値%3)
+ * @parent battleLogConfig
  * 
  * @param LabelConfig
  * @text アイコン描画設定
@@ -195,6 +213,7 @@
  * @text ターン数表示
  * @desc シールドのターン数を表示します（シールドのステートをターン数で自動解除しない場合 OFFにすることを推奨します）
  * @type boolean
+ * @default false
  * @parent TurnConfig
  * 
  * @param turnFontSize
@@ -260,16 +279,16 @@
  * 
  * @param gaugeColor1
  * @text ゲージ色1
- * @desc シールドのゲージ色1（デフォルト: rgba(200, 200, 200, 0.5)）
+ * @desc シールドのゲージ色1（デフォルト: rgba(200, 200, 200, 0.9)）
  * @type string
- * @default rgba(200, 200, 200, 0.5)
+ * @default rgba(200, 200, 200, 0.9)
  * @parent GaugeConfig
  * 
  * @param gaugeColor2
  * @text ゲージ色2
- * @desc シールドのゲージ色2（デフォルト: rgba(200, 200, 200, 0.5)）
+ * @desc シールドのゲージ色2（デフォルト: rgba(200, 200, 200, 0.9)）
  * @type string
- * @default rgba(200, 200, 200, 0.5)
+ * @default rgba(200, 200, 200, 0.9)
  * @parent GaugeConfig
  * 
  * @param AdvanceConfig
@@ -432,13 +451,16 @@
     }
   };
 
+  // シールド獲得時のメッセージ
   Window_BattleLog.prototype.makeGetShieldText = function(target) {
     const gainValue = target.result().gainShieldValue;
-    const currentValue = target.result().afterShield;
-    const text = String(MSG_GetShield).format(target.name(), gainValue, currentValue);
+    const afterValue = target.damageCutShield();
+    console.log(afterValue);
+    const text = String(MSG_GetShield).format(target.name(), gainValue, afterValue);
     return text;
   };
 
+  // シールド減少時のメッセージ
   Window_BattleLog.prototype.makeLossShieldText = function(target) {
     const value = -target.result().gainShieldValue;
     const currentValue = target.result().afterShield;
@@ -467,7 +489,8 @@
   
   Window_BattleLog.prototype.makeBlockedDamageWithShield = function(target) {
     const value = target.result().afterShield;
-    const text = String(MSG_BlockedDamage).format(target.name(), value);
+    const lossShieldValue = target.result().lossShieldValue;
+    const text = String(MSG_BlockedDamage).format(target.name(), lossShieldValue, value);
     return text;
   };
 
@@ -665,7 +688,8 @@
       blockedValue = Math.max(value - shieldValue, 0);   // シールド適用後のダメージ
       target.gainDamageCutShield( -value );
       target.result().afterShield = target.damageCutShield();   // シールド残量
-    
+      target.result().lossShieldValue =  Math.min(value, shieldValue);   // シールド減少値
+
       // ダメージがシールドより大きい場合はシールド破壊フラグをON
       if (value >= shieldValue) {
         target.result().breakShield = true;
@@ -730,7 +754,8 @@
     this.blockDamageWithShield = false;
     this.previousShield = 0;    //前のシールド値
     this.afterShield = 0;       //変化後のシールド値
-    this.gainShieldValue = 0;   //増減したシールド
+    this.gainShieldValue = 0;   //増減したシールド値
+    this.lossShieldValue = 0;   //ダメージによって減少したシールド値
   };
 
   Game_ActionResult.prototype.isShieldEffect = function() {
