@@ -1,6 +1,6 @@
 /*
 ----------------------------------------------------------------------------
- KEN_DamageCutState v1.0.0
+ KEN_DamageCutState v0.8.1
 ----------------------------------------------------------------------------
  (C)2024 KEN
  This software is released under the MIT License.
@@ -12,7 +12,7 @@
  * @target MZ
  * @plugindesc ダメージカットを行うシールドを提供します
  * @author KEN
- * @version 0.8.0
+ * @version 0.8.1
  * @url https://github.com/t-kendama/RPGMakerMZ/blob/main/KEN_DamageCutShield.js
  * 
  * @help
@@ -86,9 +86,9 @@
  * シールドが得られなくなります。
  * 
  * <damageWithShield: 数値>
- * 記述欄：ステート
+ * 記述欄：武器、防具、ステート
  * シールド耐久値を減らすダメージを受けます。
- * 継続的にダメージを与えるステートを実装するときに使用します。
+ * 継続的にダメージを与える装備やステートを実装するときに使用します。
  * 
  * 記述例．
  * <damageWithShield: 20> ターン経過時、20ダメージを与えます
@@ -638,7 +638,7 @@
   Game_Battler.prototype.itemSlipDamage = function(formula){
     try {
       const a = this;
-      const value = Math.max( eval(formula), 0);
+      const value = Math.max( Math.floor(eval(formula)), 0);
       return isNaN(value) ? 0 : value;
     } catch (e) {
       return 0;
