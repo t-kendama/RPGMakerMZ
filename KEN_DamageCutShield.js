@@ -1,12 +1,14 @@
 /*
 ----------------------------------------------------------------------------
- KEN_DamageCutState v0.8.2
+ KEN_DamageCutState v0.8.3
 ----------------------------------------------------------------------------
  (C)2024 KEN
  This software is released under the MIT License.
  http://opensource.org/licenses/mit-license.php
 ----------------------------------------------------------------------------
  Version
+ 0.8.3 2024/10/21 メニュー画面中にシールドが付与できない不具合修正
+                  非戦闘時はターン数を表示しない仕様に変更
  0.8.2 2024/10/20 シールド獲得時のバトルログで耐久値が表示されない不具合修正
                   被ダメージ時にシールド減少量を表示する機能追加
  0.8.1 2024/10/20 スリップダメージが少数になる不具合修正
@@ -17,7 +19,7 @@
  * @target MZ
  * @plugindesc ダメージカットを行うシールドを提供します
  * @author KEN
- * @version 0.8.2
+ * @version 0.8.3
  * @url https://github.com/t-kendama/RPGMakerMZ/blob/main/KEN_DamageCutShield.js
  * 
  * @help
@@ -92,12 +94,13 @@
  * 
  * <damageWithShield: 数値>
  * 記述欄：武器、防具、ステート
- * シールド耐久値を減らすダメージを受けます。
+ * シールド耐久値を減らすダメージを設定します。
  * 継続的にダメージを与える装備やステートを実装するときに使用します。
  * 
  * 記述例．
  * <damageWithShield: 20> ターン経過時、20ダメージを与えます
  * <damageWithShield: a.mhp * 0.1> ターン経過時、バトラーの最大HP10%のダメージを与えます
+ * 
  * 
  * --------------------    スクリプト    --------------------
  * ・シールド耐久値を取得
@@ -133,7 +136,7 @@
  * 
  * @param maxShieldValue
  * @text シールド最大値
- * @desc シールドの最大値を設定します ※0にすると制限が無くなります
+ * @desc シールド耐久値の最大値を設定します ※0にすると制限が無くなります
  * @type number
  * @default 99999
  * @parent generalConfig
@@ -173,7 +176,7 @@
  * @text 被ダメージのメッセージ
  * @desc シールドが付与状態でダメージを受けたときのメッセージです　%1:ターゲット名 %2:シールド減少値 %3:シールド耐久値
  * @type string
- * @default %1のシールドが%2減少した！シールド耐久値%3)
+ * @default %1のシールドが%2減少した！(シールド耐久値%3)
  * @parent battleLogConfig
  * 
  * @param LabelConfig
@@ -567,7 +570,7 @@
 
   // 受けるシールド増加量バフの値
   Game_Battler.prototype.receiveDamageCutShieldRate = function() {
-    if(this.isInvalidShield()) return 0;  // シールド無効状態の場合は0を返す
+    if(this.isInvalidShieldState()) return 0;  // シールド無効状態の場合は0を返す
     let rate = 1.0;
     if (this.isActor()) {
       for (const item of this.equips()) {
@@ -604,7 +607,7 @@
     }
   };
 
-  Game_Battler.prototype.isInvalidShield = function() {
+  Game_Battler.prototype.isInvalidShieldState = function() {
     // エネミーの場合は処理しない
     if( this.isActor() ) {
       for (const item of this.equips()) {
@@ -703,6 +706,11 @@
     _KEN_Game_Action_ExecuteHpDamage.call(this, target, blockedValue);
   };
 
+  Game_Action.prototype.isShieldAction = function() {
+    const item = this.item();
+    return item && item.meta.damageCutShield;
+  };
+
   const _KEN_Game_Action_applyItemUserEffect = Game_Action.prototype.applyItemUserEffect;
   Game_Action.prototype.applyItemUserEffect = function(target) {
     this.applyItemDamageCutShield(target);
@@ -740,6 +748,12 @@
       console.log(e);
       return 0;
     }
+  };
+
+  const _KEN_Game_Action_hasItemAnyValidEffects = Game_Action.prototype.hasItemAnyValidEffects;
+  Game_Action.prototype.hasItemAnyValidEffects = function(target) {
+    const item = this.item();
+    return _KEN_Game_Action_hasItemAnyValidEffects.call(this, target) || item.meta.damageCutShield;
   };
 
   //====================================================================
@@ -814,14 +828,13 @@
     sprite.y = TURN_TurnY + (this.isEnemy() ? ENEMY_TurnOffsetY : 0); 
     this._shieldTurnSprite = sprite;
     this.addChild(sprite);
-    this.drawShieldTurn();
   };
 
   Sprite_Gauge.prototype.drawShieldTurn = function() {
     const sprite = this._shieldTurnSprite;    
     if(!this._shieldTurnSprite) return;
     sprite.bitmap.clear();
-    if(!this.isShieldStateAffected()) return;
+    if(!this.isShieldStateAffected() || !$gameParty.inBattle()) return;
     const currentValue = this.shieldStateTurn();      
     const width = TURN_FontSize;
     const height = TURN_FontSize;
@@ -901,7 +914,7 @@
         this.drawGauge();
         this.drawLabel();
         if(GAUGE_Display) this.drawShieldGauge();
-        this.drawShieldValue();
+        if(GAUGE_Display) this.drawShieldValue();
         if (this.isValid()) {
           this.drawValue();
         }
@@ -914,9 +927,9 @@
   Sprite_Gauge.prototype.drawShieldGauge = function() {
     const gaugeX = this.gaugeX();
     const gaugeY = this.textHeight() - this.gaugeHeight();
-    const gaugewidth = this.bitmapWidth() - gaugeX;
+    const gaugeWidth = this.bitmapWidth() - gaugeX;
     const gaugeHeight = this.gaugeHeight();
-    this.drawShieldGaugeRect(gaugeX, gaugeY, gaugewidth, gaugeHeight);
+    this.drawShieldGaugeRect(gaugeX, gaugeY, gaugeWidth, gaugeHeight);
   };
 
   Sprite_Gauge.prototype.drawShieldGaugeRect = function(x, y, width, height) {
