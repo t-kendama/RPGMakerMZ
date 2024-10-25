@@ -1,12 +1,13 @@
 /*
 ----------------------------------------------------------------------------
- KEN_DamageCutState v0.8.3
+ KEN_DamageCutState v0.8.4
 ----------------------------------------------------------------------------
  (C)2024 KEN
  This software is released under the MIT License.
  http://opensource.org/licenses/mit-license.php
 ----------------------------------------------------------------------------
  Version
+ 0.8.4 2024/10/25 バトラーにシールド最大値を設定する機能追加
  0.8.3 2024/10/21 メニュー画面中にシールドが付与できない不具合修正
                   非戦闘時はターン数を表示しない仕様に変更
  0.8.2 2024/10/20 シールド獲得時のバトルログで耐久値が表示されない不具合修正
@@ -19,7 +20,7 @@
  * @target MZ
  * @plugindesc ダメージカットを行うシールドを提供します
  * @author KEN
- * @version 0.8.3
+ * @version 0.8.4
  * @url https://github.com/t-kendama/RPGMakerMZ/blob/main/KEN_DamageCutShield.js
  * 
  * @help
@@ -101,6 +102,12 @@
  * <damageWithShield: 20> ターン経過時、20ダメージを与えます
  * <damageWithShield: a.mhp * 0.1> ターン経過時、バトラーの最大HP10%のダメージを与えます
  * 
+ * <damageCutShieldMax: 数値 or 数式>
+ * 記述欄：アクター、エネミー
+ * バトラー個別にシールド耐久値の最大値を設定します。
+ * <damageCutShieldMax: a.mhp> と表記するとシールド耐久値がバトラーの最大HPの値に
+ * 制限されます。
+ * 
  * 
  * --------------------    スクリプト    --------------------
  * ・シールド耐久値を取得
@@ -123,6 +130,8 @@
  * エネミーのシールドを描画する場合は他プラグインとの併用をご検討ください。
  * シールドの描画に関する細かい挙動については対応しかねます。ご了承ください。
  *  
+ * 
+ * 
  * @param generalConfig
  * @text 基本設定
  * @desc 基本設定です ※この項目は使用しません
@@ -531,10 +540,28 @@
     }
   };
 
-  // シールド最大値
+  // シールド最大値の適用
   Game_BattlerBase.prototype.clampMaxShieldValue = function(value) {
-    if(MAX_Shield <= 0) return value;
-    return Math.min(value, MAX_Shield);
+    let maxValue = Math.min(MAX_Shield, this.damageCutShieldMax());
+    if(maxValue <= 0) return value; // 設定値が0の場合は値をそのまま返す
+    return Math.min(value, maxValue);
+  };
+
+  // バトラー個別のシールド最大値
+  Game_BattlerBase.prototype.damageCutShieldMax = function() {
+    let formula;
+    if(this.isActor()) {
+      formula = $dataActors[this.actorId()].meta.damageCutShieldMax;
+    } else if (this.isEnemy()) {
+      formula = $dataEnemies[this.enemyId()].meta.damageCutShieldMax;
+    }
+    try {
+      const a = this;
+      const value = Math.floor(eval(formula));
+      return isNaN(value) ? 0 : value;
+    } catch (e) {
+      return 0;
+    } 
   };
 
   // シールド値を代入
