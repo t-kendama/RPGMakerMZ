@@ -1,12 +1,13 @@
 /*
 ----------------------------------------------------------------------------
- KEN_DamageCutState v0.8.4
+ KEN_DamageCutState v0.9.0
 ----------------------------------------------------------------------------
  (C)2024 KEN
  This software is released under the MIT License.
  http://opensource.org/licenses/mit-license.php
 ----------------------------------------------------------------------------
  Version
+ 0.9.0 2024/10/26 シールドの外枠に表示する機能の追加
  0.8.4 2024/10/25 バトラーにシールド最大値を設定する機能追加
  0.8.3 2024/10/21 メニュー画面中にシールドが付与できない不具合修正
                   非戦闘時はターン数を表示しない仕様に変更
@@ -20,7 +21,7 @@
  * @target MZ
  * @plugindesc ダメージカットを行うシールドを提供します
  * @author KEN
- * @version 0.8.4
+ * @version 0.9.0
  * @url https://github.com/t-kendama/RPGMakerMZ/blob/main/KEN_DamageCutShield.js
  * 
  * @help
@@ -223,7 +224,7 @@
  * 
  * @param turnDisplay
  * @text ターン数表示
- * @desc シールドのターン数を表示します（シールドのステートをターン数で自動解除しない場合 OFFにすることを推奨します）
+ * @desc シールドのターン数を表示します（シールドをターン経過で自動解除しない場合 OFFにすることを推奨します）
  * @type boolean
  * @default false
  * @parent TurnConfig
@@ -262,6 +263,17 @@
  * @desc シールド耐久値を表示するゲージをHPゲージの上に描画します
  * @type boolean
  * @default true
+ * @parent GaugeConfig
+ * 
+ * @param displayType
+ * @text 描画方式
+ * @desc シールドの描画方式を選びます
+ * @type select
+ * @option ゲージの上に描画
+ * @value 0
+ * @option ゲージの外枠に描画
+ * @value 1
+ * @default 0
  * @parent GaugeConfig
  * 
  * @param gaugeValueFontSize
@@ -416,6 +428,7 @@
   const TURN_FontSize = param.turnFontSize || 8;
   const TURN_TurnX = param.turnX || 8;
   const TURN_TurnY = param.turnY || 8;
+  const GAUGE_DisplayType = param.displayType || 0;
   const GAUGE_Display = param.displayGauge;
   const GAUGE_ValueFontSize = param.gaugeValueFontSize || 16;
   const GAUGE_ValueOffsetX = param.gaugeValueX || 0;
@@ -938,10 +951,17 @@
       this.bitmap.clear();
       const currentValue = this.currentValue();
       if (!isNaN(currentValue) && !isNaN(this.currentShieldValue())) {
+        // HPバー枠に描画
+        if(GAUGE_Display && (GAUGE_DisplayType == 1)) {          
+          this.drawShieldGauge();     
+        }
         this.drawGauge();
+        // HPバーの上に描画
+        if(GAUGE_Display && (GAUGE_DisplayType == 0)) {
+          this.drawShieldGauge();
+        }
+        this.drawShieldValue();
         this.drawLabel();
-        if(GAUGE_Display) this.drawShieldGauge();
-        if(GAUGE_Display) this.drawShieldValue();
         if (this.isValid()) {
           this.drawValue();
         }
@@ -956,9 +976,15 @@
     const gaugeY = this.textHeight() - this.gaugeHeight();
     const gaugeWidth = this.bitmapWidth() - gaugeX;
     const gaugeHeight = this.gaugeHeight();
-    this.drawShieldGaugeRect(gaugeX, gaugeY, gaugeWidth, gaugeHeight);
+    const frameWidth = this.shieldGaugeFrameWidth();
+    this.drawShieldGaugeRect(gaugeX - frameWidth, gaugeY - frameWidth, gaugeWidth + frameWidth*2, gaugeHeight + frameWidth*2);
   };
 
+  Sprite_Gauge.prototype.shieldGaugeFrameWidth = function() {
+    return GAUGE_DisplayType == 0 ? 0 : 3;
+  };
+
+  // シールドゲージの描画
   Sprite_Gauge.prototype.drawShieldGaugeRect = function(x, y, width, height) {
     // ゲージ背景色は描画しない
     const rate = this.shieldGaugeRate();
