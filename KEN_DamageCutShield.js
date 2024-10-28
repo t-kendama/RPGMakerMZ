@@ -1,13 +1,15 @@
 /*
 ----------------------------------------------------------------------------
- KEN_DamageCutState v0.9.0
+ KEN_DamageCutState v1.0.0
 ----------------------------------------------------------------------------
  (C)2024 KEN
  This software is released under the MIT License.
  http://opensource.org/licenses/mit-license.php
 ----------------------------------------------------------------------------
  Version
- 0.9.0 2024/10/26 シールドの外枠に表示する機能の追加
+ 1.0.0 2024/10/28 シールド減少時のポップアップ処理追加
+                  シールド最大時の描画処理修正
+ 0.9.0 2024/10/26 シールドを外枠に表示する機能の追加
  0.8.4 2024/10/25 バトラーにシールド最大値を設定する機能追加
  0.8.3 2024/10/21 メニュー画面中にシールドが付与できない不具合修正
                   非戦闘時はターン数を表示しない仕様に変更
@@ -188,6 +190,45 @@
  * @type string
  * @default %1のシールドが%2減少した！(シールド耐久値%3)
  * @parent battleLogConfig
+ * 
+ * @param PopUpConfig
+ * @text ポップアップ設定
+ * @desc ダメージポップアップの設定です ※この項目は使用しません
+ * 
+ * @param popupDisplayShield
+ * @text ポップアップ表示
+ * @desc シールド増減時にポップアップを表示します
+ * @type boolean
+ * @default true
+ * @parent PopUpConfig
+ * 
+ * @param popupHideBlock
+ * @text ブロック時ダメージを非表示
+ * @desc シールドでダメージを防いだとき（０のとき）ダメージポップアップを非表示にします
+ * @type boolean
+ * @default true
+ * @parent PopUpConfig
+ * 
+ * @param popupShieldIcon
+ * @text アイコン表示
+ * @desc ポップアップ時にシールドアイコンを表示します
+ * @type icon
+ * @default 0
+ * @parent PopUpConfig
+ * 
+ * @param popupColorShieldGain
+ * @text シールド上昇時の色
+ * @desc シールド上昇時のポップアップの表示色 (デフォルト: rgba(255, 255, 200, 1.0))
+ * @type string
+ * @default rgba(255, 255, 200, 1.0)
+ * @parent PopUpConfig
+ * 
+ * @param popupColorShieldLoss
+ * @text シールド減少時の色
+ * @desc シールド減少時のポップアップの表示色 (デフォルト: rgba(200, 200, 255, 1.0))
+ * @type string
+ * @default rgba(200, 200, 255, 1.0)
+ * @parent PopUpConfig
  * 
  * @param LabelConfig
  * @text アイコン描画設定
@@ -421,6 +462,11 @@
   const MSG_BlockedDamage = param.msgBlockedDamage || "";
   const SE_BlockedDamage = param.seBlockDamage || null;
   const MAX_Shield = param.maxShieldValue || 99999;
+  const POPUP_DisplayShield = param.popupDisplayShield;
+  const POPUP_hideBlock = param.popupHideBlock;
+  const POPUP_shieldIcon = param.popupShieldIcon || 0;
+  const POPUP_ColorShieldGain = param.popupColorShieldGain || "rgba(255, 255, 200, 1.0)";
+  const POPUP_ColorShieldLoss = param.popupColorShieldLoss || "rgba(255, 255, 200, 1.0)";
   const LABEL_IconIndex = param.labelIconIndex || 0;
   const LABEL_IconX = param.labelIconX || 0;
   const LABEL_IconY = param.labelIconY || 0;
@@ -462,11 +508,9 @@
         this.push("popBaseLine");
       }
     } else {
-      // シールド処理ではない場合、従来の処理を行う
       _KEN_Window_BattleLog_displayActionResults.call(this, subject, target);
-    }
-    
-  };
+    }    
+  }; 
 
   // シールド値が増減したときのメッセージ
   Window_BattleLog.prototype.displayGainDamageCutShield = function(target) {
@@ -480,7 +524,6 @@
   Window_BattleLog.prototype.makeGetShieldText = function(target) {
     const gainValue = target.result().gainShieldValue;
     const afterValue = target.damageCutShield();
-    console.log(afterValue);
     const text = String(MSG_GetShield).format(target.name(), gainValue, afterValue);
     return text;
   };
@@ -519,18 +562,30 @@
     return text;
   };
 
+  const _KEN_Window_BattleLog = Window_BattleLog.prototype.popupDamage;
+  Window_BattleLog.prototype.popupDamage = function(target) {
+    _KEN_Window_BattleLog.call(this, target)
+    this.popupShieldDamage(target);
+  };
+
+  Window_BattleLog.prototype.popupShieldDamage = function(target) {
+    if (target.shouldPopupShield()) {
+      target.startShieldPopup();
+    }
+  };
+
   //====================================================================
   // ●Game_BattlerBase
   //====================================================================
   const _Game_BattlerBase_initMembers = Game_BattlerBase.prototype.initMembers;
   Game_BattlerBase.prototype.initMembers = function() {
     _Game_BattlerBase_initMembers.call(this);
-    this.clearDamageCutShield();
+    this.clearDamageCutShield();    
   };
 
   Game_BattlerBase.prototype.damageCutShield = function() {
     return this._damageCutShield;
-  };
+  };  
 
   Game_BattlerBase.prototype.isShieldState = function() {
     return this.isStateAffected(STATEID_Shield);
@@ -588,9 +643,49 @@
     this.eraseState(STATEID_Shield);
   };
 
+  Game_BattlerBase.prototype.clearShieldResult = function() {
+    this._result.clearShieldResult();
+  };
+
   //====================================================================
   // ●Game_Battler
   //====================================================================
+  const _KEN_Game_Battler_initMembers = Game_Battler.prototype.initMembers;
+  Game_Battler.prototype.initMembers = function() {
+    _KEN_Game_Battler_initMembers.call(this);
+    this._shieldPopup = false;
+  };
+
+  Game_Battler.prototype.startShieldPopup = function() {
+    this._shieldPopup = true;
+  };
+
+  const _Game_Battler_shouldPopupDamage = Game_Battler.prototype.shouldPopupDamage;
+  Game_Battler.prototype.shouldPopupDamage = function() {
+    if( POPUP_hideBlock ) {
+      const result = this._result;
+      // シールド状態かつダメージが0の時はポップアップダメージを許可
+      const isPopupShield = this.shouldPopupShield() ? Math.abs(result.hpDamage) > 0 : true;
+      return _Game_Battler_shouldPopupDamage.call(this) && isPopupShield;
+    }
+    return _Game_Battler_shouldPopupDamage.call(this);
+  };
+  
+  Game_Battler.prototype.shouldPopupShield = function() {
+    const result = this._result;
+    return (
+      Math.abs(result.lossShieldValue) > 0 || 
+      Math.abs(result.gainShieldValue) > 0
+    );
+  };
+
+  Game_Battler.prototype.isShieldPopupRequested = function() {
+    return this._shieldPopup;
+  };
+
+  Game_Battler.prototype.clearShieldPopup = function() {
+    this._shieldPopup = false;
+  };
   
   // 与えるシールド増加量バフの値
   Game_Battler.prototype.giveDamageCutShieldRate = function() {
@@ -668,6 +763,7 @@
   Game_Battler.prototype.executeHpDamageWithShield = function(value) {
     const actualDamage = Math.max(value - this.damageCutShield(), 0);
     this.gainDamageCutShield(-value);
+    this._result.lossShieldValue = value;
     this._result.hpDamage = actualDamage;
     if (actualDamage > 0) {
       this._result.hpAffected = true;      
@@ -710,7 +806,6 @@
       return 0;
     }
   };
-
 
   //====================================================================
   // ●Game_Action
@@ -802,6 +897,11 @@
   const _KEN_Game_ActionResult_clear = Game_ActionResult.prototype.clear;
   Game_ActionResult.prototype.clear = function() {
     _KEN_Game_ActionResult_clear.call(this);
+    this.clearShieldResult();
+  };
+
+  // シールド関連のリザルトのみクリア
+  Game_ActionResult.prototype.clearShieldResult = function() {
     this.breakShield = false;
     this.gainShield = false;
     this.lossShield = false;
@@ -971,6 +1071,19 @@
     }
   };  
 
+  const _Sprite_Gauge_drawGauge = Sprite_Gauge.prototype.drawGauge;
+  Sprite_Gauge.prototype.drawGauge = function() {    
+    if (GAUGE_DisplayType == 1) {
+      const gaugeX = this.gaugeX();
+      const gaugeY = this.textHeight() - this.gaugeHeight();
+      const gaugeWidth = this.bitmapWidth() - gaugeX - this.shieldGaugeFrameWidth(); // ゲージ枠を描画するため HPゲージの幅を短くする
+      const gaugeHeight = this.gaugeHeight();
+      this.drawGaugeRect(gaugeX, gaugeY, gaugeWidth, gaugeHeight);
+    } else {
+      _Sprite_Gauge_drawGauge.call(this);
+    }
+  };
+
   Sprite_Gauge.prototype.drawShieldGauge = function() {
     const gaugeX = this.gaugeX();
     const gaugeY = this.textHeight() - this.gaugeHeight();
@@ -1072,5 +1185,116 @@
     this.drawShieldIcon();
     if(TURN_Display) this.drawShieldTurn();   
   };
+
+
+  //====================================================================
+  // ●Sprite_Battler
+  //====================================================================
+  const _KEN_Sprite_Battler_initMembers = Sprite_Battler.prototype.initMembers;
+  Sprite_Battler.prototype.initMembers = function() {
+    _KEN_Sprite_Battler_initMembers.call(this);
+    this._shields = [];
+  };
+
+  const _Sprite_Battler_createDamagePopup = Sprite_Battler.prototype.setupDamagePopup;
+  Sprite_Battler.prototype.setupDamagePopup = function() {
+    if (this._battler.isShieldPopupRequested()) {
+      if (this._battler.isSpriteVisible() && POPUP_DisplayShield) {
+        this.createShieldSprite();
+      }
+      this._battler.clearShieldPopup();
+      this._battler.clearShieldResult();  //シールド関連のリザルトを消去
+    }
+    _Sprite_Battler_createDamagePopup.call(this);
+  };
+
+  Sprite_Battler.prototype.createShieldSprite = function() {
+    const last = this._damages[this._damages.length - 1];
+    const sprite = new Sprite_DamageShield();
+    if (last) {
+        sprite.x = last.x + 8;
+        sprite.y = last.y - 16;
+    } else {
+        sprite.x = this.x + this.damageOffsetX();
+        sprite.y = this.y + this.damageOffsetY();
+    }
+    sprite.setup(this._battler);
+    this._damages.push(sprite);
+    this.parent.addChild(sprite);
+  };
+
+  //====================================================================
+  // ●Sprite_Damage
+  //====================================================================
+  const _Sprite_Damage_initialize = Sprite_Damage.prototype.initialize;
+  Sprite_Damage.prototype.initialize = function() {
+    _Sprite_Damage_initialize.call(this);
+    this._isShield = false;
+  };
+
+  Sprite_Damage.prototype.isShield = function() {
+    return this._isShield;
+  };
+
+  //====================================================================
+  // ●Sprite_DamageShield
+  //====================================================================
+  class Sprite_DamageShield extends Sprite_Damage {
+    initialize() {
+      super.initialize();
+      this._isShield = true;
+    }
+
+    setup(target){
+      const result = target.result();      
+      if (Math.abs(result.lossShieldValue) > 0) {
+        if(POPUP_shieldIcon > 0) this.createIcon(-result.lossShieldValue);
+        this._colorType = 0;
+        this.createDigits(-result.lossShieldValue);
+      } else if (Math.abs(result.gainShieldValue) > 0){
+        if(POPUP_shieldIcon > 0) this.createIcon(result.gainShieldValue);
+        this._colorType = 1;
+        this.createDigits(result.gainShieldValue);
+      }
+    }
+
+    createIcon(value) {
+      const string = value.toString();
+      const stringWidth = Math.floor(this.fontSize() * 0.75);
+      const h = ImageManager.iconWidth;
+      const w = ImageManager.iconHeight;
+      const sx = (POPUP_shieldIcon % 16) * w;
+      const sy = Math.floor(POPUP_shieldIcon / 16) * h;
+      const iconSet = ImageManager.loadSystem("IconSet");
+      const bitmap = new Bitmap(w, h);
+      bitmap.blt(iconSet, sx, sy, w, h, 0, 0);
+      const sprite = this.createChildSprite(w, h);
+      sprite.bitmap = bitmap;
+      sprite.x = -(string.length - 1) / 2 * stringWidth;
+      sprite.dy = 0;
+    }
+
+    createDigits(value) {
+      const string = value.toString();
+      const h = this.fontSize();
+      const w = Math.floor(h * 0.75);
+      const offsetX = POPUP_shieldIcon > 0 ? ImageManager.iconWidth : 0;
+      for (let i = 0; i < string.length; i++) {
+        const sprite = this.createChildSprite(w, h);
+        sprite.bitmap.drawText(string[i], 0, 0, w, h, "center");
+        sprite.x = (i - (string.length - 1) / 2) * w + offsetX;
+        sprite.dy = -i;
+      }
+    }
+
+    damageColor() {
+      if(this._colorType == 0) {
+        return POPUP_ColorShieldLoss;
+      } else if (this._colorType == 1) {
+        return POPUP_ColorShieldGain;
+      }
+      return ColorManager.damageColor(0);
+    }    
+  }
 
 })();
