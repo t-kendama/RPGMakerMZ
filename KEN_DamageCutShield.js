@@ -597,6 +597,7 @@
 
   // シールド値を増加
   Game_BattlerBase.prototype.gainDamageCutShield = function(value) {
+    const origin = this._damageCutShield;
     this._damageCutShield += value;
     this._damageCutShield = this.clampMaxShieldValue(this._damageCutShield);
     this._damageCutShield = Math.max(this._damageCutShield, 0);   
@@ -606,6 +607,8 @@
     if(this._damageCutShield <= 0) {
       this.eraseState(STATEID_Shield);
     }
+
+    return this._damageCutShield - origin;
   };
 
   // シールド最大値の適用
@@ -626,9 +629,9 @@
     try {
       const a = this;
       const value = Math.floor(eval(formula));
-      return isNaN(value) ? 0 : value;
+      return isNaN(value) ? MAX_Shield : value;
     } catch (e) {
-      return 0;
+      return MAX_Shield;
     } 
   };
 
@@ -856,8 +859,8 @@
     const item = this.item();
     const value = this.evalMetaFormula(target, item.meta.damageCutShield);
     if(value != 0) {
-      target.gainDamageCutShield(value);  // バトラーのシールドを増減
-      target.result().gainShieldValue = value;
+      const gainValue = target.gainDamageCutShield(value);  // バトラーのシールドを増減
+      target.result().gainShieldValue = gainValue;
       this.makeSuccess(target);
     }
     if(value > 0) {
