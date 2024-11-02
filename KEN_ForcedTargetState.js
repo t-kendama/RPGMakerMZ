@@ -167,7 +167,7 @@
   };
 
   Window_BattleLog.prototype.displayForcedTargetMessage = function(subject, item) {
-    if (subject.isForcedStateAffected() && isForcedTargetItem(item, subject.forcedStateId())) {
+    if (subject.isForcedStateAffected() && subject.isForcedTargetAlive() && isForcedTargetItem(item, subject.forcedStateId())) {
       const text = this.makeForcedTargetMessage(subject);
       if(text) this.push("addText", text);
     }
