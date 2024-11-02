@@ -6,15 +6,16 @@ RPGツクールMZ用のプラグインです。
 | プラグイン名  | 説明 |
 | ------------- | ------------- |
 | KEN_DamageCutShield.js | ダメージカットを行うシールドを提供します。  |
+| KEN_ForcedTargetState.js | ターゲットを強制するステート。  |
 
 ### KEN_DamageCutShield.js
 
 * 概要  
 
-![DamageCutShield001](https://github.com/t-kendama/RPGMakerMZ/blob/master/images/DamageCutShield_002.jpg)
-
-ダメージカットを行うシールドを提供します。  
+ダメージカットを行うシールドを提供します。敵の攻撃を防ぐバリアのようなステートが作れます。  
 使い方についてはプラグイン中のヘルプを参照ください。
+
+![DamageCutShield001](https://github.com/t-kendama/RPGMakerMZ/blob/master/images/DamageCutShield_002.jpg)
 
 * ステート設定の例  
 
@@ -22,6 +23,19 @@ RPGツクールMZ用のプラグインです。
 この設定では、3ターン持続するシールドになります。シールドは戦闘終了後に解除されます。  
 
 ![DamageCutShield001](https://github.com/t-kendama/RPGMakerMZ/blob/master/images/DamageCutShield_001.jpg)
+
+### KEN_ForcedTargetState.js
+
+* 概要  
+
+ターゲットを強制するステートを実装できます。  
+特定の敵の攻撃を引き付ける挑発のようなステートを作成できます。ツクールデフォルトにある「身代わり」と異なり、相手に付与することで敵の攻撃を引き付けます。
+
+![DamageCutShield001](https://github.com/t-kendama/RPGMakerMZ/blob/master/images/ForcedTargetState_001.jpg)
+
+強制ターゲットステートを付与されている時、強制ターゲット先しか選択不可にする設定も可能です。
+
+![DamageCutShield001](https://github.com/t-kendama/RPGMakerMZ/blob/master/images/ForcedTargetState_002.jpg)
 
 ## 規約
 [MITライセンス](https://github.com/t-kendama/RPGMakerMZ/blob/main/LICENSE)に準拠します。
