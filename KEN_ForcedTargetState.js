@@ -15,7 +15,7 @@
  * @plugindesc ターゲット強制ステート
  * @author KEN
  * @version 1.0.0
- * @url https://github.com/t-kendama/RPGMakerMZ/blob/main/KEN_DamageCutShield.js
+ * @url https://github.com/t-kendama/RPGMakerMZ/blob/master/KEN_ForcedTargetState.js
  * 
  * @help
  *
