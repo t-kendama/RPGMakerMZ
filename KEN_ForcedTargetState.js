@@ -1,12 +1,13 @@
 /*
 ----------------------------------------------------------------------------
- KEN_ForcedTargetState v1.0.0
+ KEN_ForcedTargetState v1.0.1
 ----------------------------------------------------------------------------
  (C)2024 KEN
  This software is released under the MIT License.
  http://opensource.org/licenses/mit-license.php
 ----------------------------------------------------------------------------
  Version
+ 1.0.1 2024/11/03 ステート付与失敗時も強制ステート効果が発動していた不具合修正
  1.0.0 2024/11/02 初版
 ----------------------------------------------------------------------------
 */
@@ -14,7 +15,7 @@
  * @target MZ
  * @plugindesc ターゲット強制ステート
  * @author KEN
- * @version 1.0.0
+ * @version 1.0.1
  * @url https://github.com/t-kendama/RPGMakerMZ/blob/master/KEN_ForcedTargetState.js
  * 
  * @help
@@ -317,7 +318,8 @@
   Game_Action.prototype.itemEffectAddState = function(target, effect) {
     _Game_Action_itemEffectAddState.call(this, target, effect);
     const subject = this.subject();
-    if(this.isForOpponent() && isForceState(effect.dataId)) {
+    const success = target.result().success;
+    if(this.isForOpponent() && isForceState(effect.dataId) && success) {
       if (subject.isActor()) {
         const partyIndex = $gameParty.members().indexOf(subject);
         target.setForcedState(effect.dataId, partyIndex);
