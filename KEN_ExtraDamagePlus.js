@@ -217,14 +217,13 @@
   Sprite_Damage.prototype.createExtraDamageString = function(value) {
     const string = Math.abs(value).toString();
     const h = this.extraDamageFontSize();
-    const w = Math.floor(h * 0.75 * string.length);
+    const w = Math.floor(h * 0.75 * (string.length+1));
     const offsetX = Math.floor(w);
     const label = "+";
     const sprite = this.createChildSprite(w, h);
     sprite.bitmap.fontSize = this.extraDamageFontSize();
     sprite.bitmap.textColor = this.extraDamageFontColor();
     sprite.bitmap.drawText(label + string, 0, 0, w, h, "center");
-    sprite.anchor.x = 0.5;
     sprite.x = sprite.x + offsetX;
     sprite.y = this.extraDamageFontSize();
     sprite.dy = 0;
@@ -235,8 +234,12 @@
   Sprite_Damage.prototype.updateChild = function(sprite) {
     _Sprite_Damage_updateChild.call(this, sprite);
     if(sprite.isExtraDamageSprite) {
-      sprite.y -= this.extraDamageFontSize();
+      sprite.y -= this.extraDamageOffsetY();
     }    
+  };
+
+  Sprite_Damage.prototype.extraDamageOffsetY = function() {
+    return 0;
   };
 
   Sprite_Damage.prototype.extraDamageFontSize = function() {
