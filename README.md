@@ -39,12 +39,13 @@ RPGツクールMZ用のプラグインです。
 ![DamageCutShield001](https://github.com/t-kendama/RPGMakerMZ/blob/master/images/ForcedTargetState_002.jpg)
 
 ### KEN_CustomizeGauge.js
-アクターごとのパラメータ描画形式をカスタマイズします。
+アクターごとのパラメータ描画形式をカスタマイズします。  
 従来のゲージ形式のほか、パラメータを図形や画像形式で描画することも可能です。
 
-上記機能に加え、TPの最大値を変更する機能も提供します。
+上記機能に加え、TPの最大値を変更する機能も提供します。  
+パラメータの描画方法を魔改造したい方向けのプラグインです。
 
-
+![CustomizeGauge001](https://github.com/t-kendama/RPGMakerMZ/blob/master/images/CustomizeGauge_001.jpg)!
 
 
 ## 規約
