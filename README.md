@@ -5,8 +5,9 @@ RPGツクールMZ用のプラグインです。
 
 | プラグイン名  | 説明 |
 | ------------- | ------------- |
-| KEN_DamageCutShield.js | ダメージカットを行うシールドを提供します。  |
-| KEN_ForcedTargetState.js | ターゲットを強制するステート。  |
+| KEN_DamageCutShield.js | ダメージカットを行うシールドを提供します  |
+| KEN_ForcedTargetState.js | ターゲットを強制するステート  |
+| KEN_CustomizeGauge.js| アクターごとのパラメータ描画をカスタマイズ|
 
 ### KEN_DamageCutShield.js
 
@@ -36,6 +37,15 @@ RPGツクールMZ用のプラグインです。
 強制ターゲットステートを付与されている時、強制ターゲット先しか選択不可にする設定も可能です。
 
 ![DamageCutShield001](https://github.com/t-kendama/RPGMakerMZ/blob/master/images/ForcedTargetState_002.jpg)
+
+### KEN_CustomizeGauge.js
+アクターごとのパラメータ描画形式をカスタマイズします。
+従来のゲージ形式のほか、パラメータを図形や画像形式で描画することも可能です。
+
+上記機能に加え、TPの最大値を変更する機能も提供します。
+
+
+
 
 ## 規約
 [MITライセンス](https://github.com/t-kendama/RPGMakerMZ/blob/main/LICENSE)に準拠します。
