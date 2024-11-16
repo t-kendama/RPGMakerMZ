@@ -15,7 +15,7 @@
  * @plugindesc アクターごとのパラメータ描画をカスタマイズ
  * @author KEN
  * @version 1.0.0
- * @url 
+ * @url https://github.com/t-kendama/RPGMakerMZ/edit/master/KEN_CustomizeGauge.js
  * 
  * @help
  *
