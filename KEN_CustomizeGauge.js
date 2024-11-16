@@ -29,22 +29,34 @@
  * プラグインパラメータから設定します。
  * 描画設定はアクター毎に行います。
  *
- * 【基本設定】 
+ * 【共通設定】 
  * ・アクター設定
  * アクターのゲージ描画設定やTP設定を行います。
- * 未設定の場合、ゲージの描画はツクールのデフォルトの仕様となります。
+ * 詳細は「アクター個別の設定」参照。
  * 
  * ・最大TP上限値
  * TPの上限の最大値を設定します。
  * この値はアクターすべてに適用されます。
+ * 
+ * 【アクター個別の設定】
+ * アクターごとのパラメータ描画およびTPの設定を行います。
+ * 未設定の場合、ツクールのデフォルトの仕様が適用されます。
+ * ・HP/MP/TP設定
+ * 各パラメータの描画に関する詳細設定です。
+ * 
+ * ・デフォルト最大TP
+ * キャラクターのデフォルト最大TPです。
+ * 
+ * ・戦闘開始時にTPを初期化
+ * 戦闘開始時にTPを初期化（ランダムな値）します。
  * 
  * 【用語/略称（ラベル）設定】
  * 基本ステータスの用語を設定します。
  * この設定はツクールのデータベースより優先されます。
  * 空欄にすると表示されなくなるため、必ず設定ください。
  *  
- * 【HP/MP/TPゲージ描画設定】
- * ゲージに関する描画の詳細設定です。以下の描画方式に対応しています。
+ * 【描画設定】
+ * 以下の描画方式に対応しています。
  * 画像・図形はパラメータの値の数だけ描画するため、最大値にはご注意ください。
  * ・ゲージ
  * ・画像（※1）
@@ -92,20 +104,20 @@
  * @type actor
  * 
  * @param hpConfig
- * @text HPゲージ描画設定
- * @desc HPゲージの描画方法を設定します 
+ * @text HP描画設定
+ * @desc HPの描画方法を設定します 
  * @default {"General":"","displayGauge":"true","hideOutBattle":"false","term":"ＨＰ","label":"HP","labelBitmap":"","DisplayGeneral":"","displayType":"0","itemPadding":"1","displayValue":"true","valueFontSize":"20","Gauge":"","gaugeHeight":"12","Shape":"","iconWidth":"16","Bitmap":"","bitmapFill":"","bitmapFrame":"","bitmapBack":"","Color":"","gaugeColor1":"","gaugeColor2":"","gaugeBackColor":""}
  * @type struct<ParameterConfig>
  * 
  * @param mpConfig
- * @text MPゲージ描画設定
- * @desc MPゲージの描画方法を設定します
+ * @text MP描画設定
+ * @desc MPの描画方法を設定します
  * @default {"General":"","displayGauge":"true","hideOutBattle":"false","term":"ＭＰ","label":"MP","labelBitmap":"","DisplayGeneral":"","displayType":"0","itemPadding":"1","displayValue":"true","valueFontSize":"20","Gauge":"","gaugeHeight":"12","Shape":"","iconWidth":"16","Bitmap":"","bitmapFill":"","bitmapFrame":"","bitmapBack":"","Color":"","gaugeColor1":"","gaugeColor2":"","gaugeBackColor":""}
  * @type struct<ParameterConfig>
  * 
  * @param tpConfig
- * @text TPゲージ描画方法を設定します
- * @desc TPゲージの描画設定です
+ * @text TP描画設定
+ * @desc TPの描画方法を設定します
  * @default {"General":"","displayGauge":"true","hideOutBattle":"false","term":"ＴＰ","label":"TP","labelBitmap":"","DisplayGeneral":"","displayType":"0","itemPadding":"1","displayValue":"true","valueFontSize":"20","Gauge":"","gaugeHeight":"12","Shape":"","iconWidth":"16","Bitmap":"","bitmapFill":"","bitmapFrame":"","bitmapBack":"","Color":"","gaugeColor1":"","gaugeColor2":"","gaugeBackColor":""}
  * @type struct<ParameterConfig>
  * 
@@ -859,7 +871,7 @@
     gaugeBackColor() {
       const config = this.config();
       if(config) {
-        return config.gaugeBackColor;
+        return config.gaugeBackColor ? config.gaugeBackColor : super.gaugeBackColor();
       }
       return super.gaugeBackColor();
     }
