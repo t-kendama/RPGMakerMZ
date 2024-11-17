@@ -22,8 +22,10 @@
  * -------------------------    概要    -------------------------
  * 
  * 追加ダメージバフを得る装備・ステートを実装します。
- * この追加ダメージはダメージ計算式と独立して扱われ、バトラーのステータスの
- * 影響を受けません。
+ * この追加ダメージはダメージ計算式と独立して扱われます。
+ *
+ * 数式を記述することで使用者の攻撃力や攻撃対象の防御力を参照して
+ * 追加ダメージを発生させることも可能です。
  * 
  * 【追加ダメージの仕様】
  * この追加ダメージはアイテム・スキルのダメージ設定を
@@ -38,13 +40,18 @@
  * <ExtraDamageBuff:数値 or 数式>
  * 記述欄： 武器・防具・ステート
  * 追加ダメージバフを得ます。数値は0より大きい値を指定してください。
+ * 数式の結果は0以上に丸め込まれます。
  * 例．
  * <ExtraDamageBuff:10> 攻撃時10の追加ダメージが発生します
- * <ExtraDamageBuff:a.atk * 0.1> 攻撃時使用者の攻撃力10%の追加ダメージが発生します
+ * <ExtraDamageBuff:a.atk * 0.2> スキル使用者の攻撃力20%の追加ダメージが発生します
+ * <ExtraDamageBuff:100 - b.def * 0.5> 100から攻撃対象の防御力の半分を引いた値の
+ * 追加ダメージが発生します
  * 
  * <ExtraDamageDebuff:数値 or 数式>
  * 記述欄： 武器・防具・ステート
  * 被ダメージ時に追加ダメージを受けるようになります。数値は0より大きい値を指定してください。
+ * 数式で用いられる計算式はExtraDamageBuffと同じです。
+ * （a:スキル使用者, b:ターゲット であることに注意ください）
  * 
  * <InvalidExtraDamage>
  * 記述欄： アイテム・スキル
@@ -110,7 +117,7 @@
     }
   }));
 
-  const POPUP_FontSize = param.fontSize || 26;
+  const POPUP_FontSize = param.fontSize || 20;
   const POPUP_OffsetX = param.popUpOffsetX;
   const POPUP_OffsetY = param.popUpOffsetY;
   const POPUP_DisplayExtraDamage = param.displayExtraDamage;
@@ -132,7 +139,6 @@
     }
   };
 
-
   //====================================================================
   // ●Game_Battler
   //====================================================================
@@ -150,34 +156,38 @@
     this._extraDamagePopup = false;
   };
 
-  Game_Battler.prototype.extraDamageBuff = function() {
-    let buff = 0;
+  Game_Battler.prototype.getExtraDamageBuffFormula = function() {
+    let formulaList = [];
     if (this.isActor()) {
       for (const item of this.equips()) {
-        if (item) {
-          buff += this.evalExtraDamage(item.meta.ExtraDamageBuff) || 0;
+        if (item && item.meta.ExtraDamageBuff) {
+          formulaList.push(item.meta.ExtraDamageBuff);
         }
       }
     }
     for (const state of this.states()) {
-      buff += this.evalExtraDamage(state.meta.ExtraDamageBuff) || 0;
+      if(state.meta.ExtraDamageBuff) {
+        formulaList.push(state.meta.ExtraDamageBuff);
+      }      
     }
-    return Math.max(buff, 0);
+    return formulaList;
   };
 
-  Game_Battler.prototype.extraDamageDebuff = function() {
-    let buff = 0;
+  Game_Battler.prototype.getExtraDamageDebuffFormula = function() {
+    let formulaList = [];
     if (this.isActor()) {
       for (const item of this.equips()) {
-        if (item) {
-          buff += this.evalExtraDamage(item.meta.ExtraDamageDebuff) || 0;
+        if (item && item.meta.ExtraDamageDebuff) {
+          formulaList.push(item.meta.ExtraDamageDebuff);
         }
       }
     }
     for (const state of this.states()) {
-      buff += this.evalExtraDamage(state.meta.ExtraDamageDebuff) || 0;
+      if(state.meta.ExtraDamageDebuff) {
+        formulaList.push(state.meta.ExtraDamageDebuff);
+      }      
     }
-    return Math.max(buff, 0);
+    return formulaList;
   };
 
   Game_Battler.prototype.shouldPopupExtraDamage = function() {
@@ -187,17 +197,7 @@
 
   Game_Battler.prototype.isExtraDamagePopupRequested = function() {
     return this._extraDamagePopup;
-  };
-
-  Game_BattlerBase.prototype.evalExtraDamage = function(formula) {
-    try {
-      const a = this;
-      const value = Math.floor(eval(formula));
-      return isNaN(value) ? 0 : value;
-    } catch (e) {
-      return 0;
-    } 
-  };
+  };  
 
   //====================================================================
   // ●Game_Action
@@ -210,8 +210,7 @@
 
     // HPダメージの処理
     if( !item.meta.InvalidExtraDamage && this.isHpDamageOrDrain() ) {
-      extraDamage += this.subject().extraDamageBuff();
-      extraDamage += target.extraDamageDebuff();
+      extraDamage = this.makeExtraDamageValue(target);
       target._result.originHpDamage = originDamage;
       target._result.extraHpDamage = extraDamage;
     }
@@ -227,6 +226,30 @@
     return this.checkDamageType([2, 6]);
   };
 
+  Game_Action.prototype.makeExtraDamageValue = function(target) {    
+    const subject = this.subject();
+    let result = 0;
+
+    for(const formula of subject.getExtraDamageBuffFormula()) {
+      result += this.evalExtraDamage(formula, target);
+    }
+    for(const formula of target.getExtraDamageDebuffFormula()) {
+      result += this.evalExtraDamage(formula, target);
+    }
+
+    return result;
+  };
+
+  Game_Action.prototype.evalExtraDamage = function(formula, target) {
+    try {
+      const a = this.subject();
+      const b = target;
+      const value = Math.floor(eval(formula));
+      return isNaN(value) ? 0 : Math.max(0, value);
+    } catch (e) {
+      return 0;
+    } 
+  };
 
   //====================================================================
   // ●Game_ActionResult
@@ -248,7 +271,6 @@
   const _Sprite_Damage_initialize = Sprite_Damage.prototype.initialize;
   Sprite_Damage.prototype.initialize = function() {
     _Sprite_Damage_initialize.call(this);
-    this._offsetX = 0;
   };
 
   const _Sprite_Damage_setup = Sprite_Damage.prototype.setup;
@@ -280,9 +302,10 @@
     const height = this.extraDamageFontSize();
     const width = Math.floor(height * 0.75 * (text.length+1));
     const valueText = value.toString();
-    const valueTextWidth = Math.floor(height * 0.75 * (valueText.length+1));    
+    const valueTextWidth = Math.floor(height * 0.75 * (valueText.length));    
     const sprite = this.createChildSprite(width, height);
     const offsetX = Math.floor(valueTextWidth/2) + Math.floor(width/2) + this.extraDamageOffsetX();
+    console.log(offsetX);
 
     sprite.bitmap.fontSize = this.extraDamageFontSize();
     sprite.bitmap.textColor = this.extraDamageFontColor();
