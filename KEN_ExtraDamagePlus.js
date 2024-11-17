@@ -1,6 +1,6 @@
 /*
 ----------------------------------------------------------------------------
- KEN_ExtraDamagePlus v0.8.0
+ KEN_ExtraDamagePlus v1.0.0
 ----------------------------------------------------------------------------
  (C)2024 KEN
  This software is released under the MIT License.
