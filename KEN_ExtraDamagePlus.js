@@ -7,7 +7,7 @@
  http://opensource.org/licenses/mit-license.php
 ----------------------------------------------------------------------------
  Version
- 0.8.0 2024/11/04 β版実装
+ 1.0.0 2024/11/17 初版
 ----------------------------------------------------------------------------
 */
 /*:
@@ -15,7 +15,7 @@
  * @plugindesc 追加ダメージプラグイン
  * @author KEN
  * @version 0.8.0
- * @url 
+ * @url https://github.com/t-kendama/RPGMakerMZ/blob/master/KEN_ExtraDamagePlus.js
  * 
  * @help
  *
@@ -25,12 +25,22 @@
  * この追加ダメージはダメージ計算式と独立して扱われ、バトラーのステータスの
  * 影響を受けません。
  * 
+ * 【追加ダメージの仕様】
+ * この追加ダメージはアイテム・スキルのダメージ設定を
+ * 「HPダメージ」または「HP吸収」に設定したとき発生します。
+ * 
+ * 【ダメージポップアップの表示位置】
+ * デフォルト設定では通常のダメージの右側に表示されます。
+ * 表示位置はプラグインパラメータで調整可能です。
  * 
  * -------------------------    使い方    -------------------------
  * 
- * <ExtraDamageBuff:数値>
+ * <ExtraDamageBuff:数値 or 数式>
  * 記述欄： 武器・防具・ステート
  * 追加ダメージバフを得ます。数値は0より大きい値を指定してください。
+ * 例．
+ * <ExtraDamageBuff:10> 攻撃時10の追加ダメージが発生します
+ * <ExtraDamageBuff:a.atk * 0.1> 攻撃時使用者の攻撃力10%の追加ダメージが発生します
  * 
  * <ExtraDamageDebuff:数値 or 数式>
  * 記述欄： 武器・防具・ステート
@@ -42,16 +52,38 @@
  * 
  * 
  * @param displayExtraDamage
- * @text ポップアップ表示
- * @desc 追加ダメージを通常ダメージと独立して表示させます。
+ * @text ポップアップを表示する
+ * @desc 追加ダメージを通常ダメージと独立して表示させます
  * @type boolean
  * @default true
  * 
+ * @param popUpText
+ * @text ポップアップテキスト
+ * @desc 追加ダメージのポップアップ表記を設定します（%1が追加ダメージの値です）
+ * @type string
+ * @default +%1
+ * 
+ * @param popUpOffsetX
+ * @text ポップアップX座標
+ * @desc ポップアップ表示のX座標
+ * @type number
+ * @default 0
+ * @max 1000
+ * @min -1000
+ * 
+ * @param popUpOffsetY
+ * @text ポップアップY座標
+ * @desc ポップアップ表示のY座標
+ * @type number
+ * @default 0
+ * @max 1000
+ * @min -1000
+ * 
  * @param fontSize
  * @text フォントサイズ
- * @desc 追加ダメージのフォントサイズ（デフォルト: 26）
+ * @desc 追加ダメージのフォントサイズ
  * @type number
- * @default 26
+ * @default 20
  * 
  * @param fontColor
  * @text フォントカラー
@@ -79,8 +111,11 @@
   }));
 
   const POPUP_FontSize = param.fontSize || 26;
+  const POPUP_OffsetX = param.popUpOffsetX;
+  const POPUP_OffsetY = param.popUpOffsetY;
   const POPUP_DisplayExtraDamage = param.displayExtraDamage;
   const POPUP_ColorExtraDamage = param.fontColor || "rgba(255, 255, 128, 1)";
+  const POPUP_Text = param.popUpText;
 
   //====================================================================
   // ●Window_BattleLog
@@ -120,12 +155,12 @@
     if (this.isActor()) {
       for (const item of this.equips()) {
         if (item) {
-          buff += Number(item.meta.ExtraDamageBuff) || 0;
+          buff += this.evalExtraDamage(item.meta.ExtraDamageBuff) || 0;
         }
       }
     }
     for (const state of this.states()) {
-      buff += Number(state.meta.ExtraDamageBuff) || 0;
+      buff += this.evalExtraDamage(state.meta.ExtraDamageBuff) || 0;
     }
     return Math.max(buff, 0);
   };
@@ -135,12 +170,12 @@
     if (this.isActor()) {
       for (const item of this.equips()) {
         if (item) {
-          buff += Number(item.meta.ExtraDamageDebuff) || 0;
+          buff += this.evalExtraDamage(item.meta.ExtraDamageDebuff) || 0;
         }
       }
     }
     for (const state of this.states()) {
-      buff += Number(state.meta.ExtraDamageDebuff) || 0;
+      buff += this.evalExtraDamage(state.meta.ExtraDamageDebuff) || 0;
     }
     return Math.max(buff, 0);
   };
@@ -154,6 +189,15 @@
     return this._extraDamagePopup;
   };
 
+  Game_BattlerBase.prototype.evalExtraDamage = function(formula) {
+    try {
+      const a = this;
+      const value = Math.floor(eval(formula));
+      return isNaN(value) ? 0 : value;
+    } catch (e) {
+      return 0;
+    } 
+  };
 
   //====================================================================
   // ●Game_Action
@@ -163,7 +207,9 @@
     const originDamage = _Game_Action_makeDamageValue.call(this, target, critical);
     const item = this.item();
     let extraDamage = 0;
-    if( !item.meta.InvalidExtraDamage ) {
+
+    // HPダメージの処理
+    if( !item.meta.InvalidExtraDamage && this.isHpDamageOrDrain() ) {
       extraDamage += this.subject().extraDamageBuff();
       extraDamage += target.extraDamageDebuff();
       target._result.originHpDamage = originDamage;
@@ -172,6 +218,15 @@
 
     return originDamage + extraDamage;
   };
+
+  Game_Action.prototype.isHpDamageOrDrain = function() {
+    return this.checkDamageType([1, 5]);
+  };
+
+  Game_Action.prototype.isMpDamageOrDrain = function() {
+    return this.checkDamageType([2, 6]);
+  };
+
 
   //====================================================================
   // ●Game_ActionResult
@@ -190,6 +245,12 @@
   //====================================================================
   // ●Sprite_Damage
   //====================================================================
+  const _Sprite_Damage_initialize = Sprite_Damage.prototype.initialize;
+  Sprite_Damage.prototype.initialize = function() {
+    _Sprite_Damage_initialize.call(this);
+    this._offsetX = 0;
+  };
+
   const _Sprite_Damage_setup = Sprite_Damage.prototype.setup;
   Sprite_Damage.prototype.setup = function(target) {    
     const ehpDamage = target.result().extraHpDamage;
@@ -215,31 +276,40 @@
   };
 
   Sprite_Damage.prototype.createExtraDamageString = function(value) {
-    const string = Math.abs(value).toString();
-    const h = this.extraDamageFontSize();
-    const w = Math.floor(h * 0.75 * (string.length+1));
-    const offsetX = Math.floor(w);
-    const label = "+";
-    const sprite = this.createChildSprite(w, h);
+    const text = this.createExtraPopUpDamageText(value);
+    const height = this.extraDamageFontSize();
+    const width = Math.floor(height * 0.75 * (text.length+1));
+    const valueText = value.toString();
+    const valueTextWidth = Math.floor(height * 0.75 * (valueText.length+1));    
+    const sprite = this.createChildSprite(width, height);
+    const offsetX = Math.floor(valueTextWidth/2) + Math.floor(width/2) + this.extraDamageOffsetX();
+
     sprite.bitmap.fontSize = this.extraDamageFontSize();
     sprite.bitmap.textColor = this.extraDamageFontColor();
-    sprite.bitmap.drawText(label + string, 0, 0, w, h, "center");
-    sprite.x = sprite.x + offsetX;
-    sprite.y = this.extraDamageFontSize();
+    sprite.bitmap.drawText(text, 0, 0, width, height, "center");
+    sprite.x = offsetX;
     sprite.dy = 0;
     sprite.isExtraDamageSprite = true;
+  };
+
+  Sprite_Damage.prototype.createExtraPopUpDamageText = function(value) {
+    return POPUP_Text.replace("%1", value).toString();
   };
 
   const _Sprite_Damage_updateChild = Sprite_Damage.prototype.updateChild;
   Sprite_Damage.prototype.updateChild = function(sprite) {
     _Sprite_Damage_updateChild.call(this, sprite);
-    if(sprite.isExtraDamageSprite) {
-      sprite.y -= this.extraDamageOffsetY();
+    if(sprite.isExtraDamageSprite) {      
+      sprite.y += this.extraDamageOffsetY();
     }    
   };
 
+  Sprite_Damage.prototype.extraDamageOffsetX = function() {
+    return POPUP_OffsetX;
+  };
+
   Sprite_Damage.prototype.extraDamageOffsetY = function() {
-    return 0;
+    return POPUP_OffsetY;
   };
 
   Sprite_Damage.prototype.extraDamageFontSize = function() {
