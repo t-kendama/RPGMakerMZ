@@ -14,7 +14,7 @@
  * @target MZ
  * @plugindesc 追加ダメージプラグイン
  * @author KEN
- * @version 0.8.0
+ * @version 1.0.0
  * @url https://github.com/t-kendama/RPGMakerMZ/blob/master/KEN_ExtraDamagePlus.js
  * 
  * @help
