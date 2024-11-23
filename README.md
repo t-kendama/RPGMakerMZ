@@ -3,11 +3,12 @@ RPGツクールMZ用のプラグインです。
 
 ## プラグイン一覧
 
-| プラグイン名  | 説明 |
-| ------------- | ------------- |
-| KEN_DamageCutShield.js | ダメージカットを行うシールドを提供します  |
-| KEN_ForcedTargetState.js | ターゲットを強制するステート  |
-| KEN_CustomizeGauge.js| アクターごとのパラメータ描画をカスタマイズ|
+| プラグイン名  | 説明 | リンク |
+| ------------- | ------------- | ------------- |
+| KEN_DamageCutShield.js | ダメージカットを行うシールドを提供します  | [DL](https://github.com/t-kendama/RPGMakerMZ/blob/master/KEN_DamageCutShield.js) |
+| KEN_ForcedTargetState.js | ターゲットを強制するステート  | [DL](https://github.com/t-kendama/RPGMakerMZ/blob/master/KEN_ForcedTargetState.js) |
+| KEN_CustomizeGauge.js| アクターごとのパラメータ描画をカスタマイズ| [DL](https://github.com/t-kendama/RPGMakerMZ/blob/master/KEN_CustomizeGauge.js) |
+| KEN_ExtraDamagePlus.js| 追加ダメージプラグイン | [DL](https://github.com/t-kendama/RPGMakerMZ/blob/master/KEN_ExtraDamagePlus.js) |
 
 ### KEN_DamageCutShield.js
 
@@ -45,8 +46,15 @@ RPGツクールMZ用のプラグインです。
 上記機能に加え、TPの最大値を変更する機能も提供します。  
 パラメータの描画方法を魔改造したい方向けのプラグインです。
 
-![CustomizeGauge001](https://github.com/t-kendama/RPGMakerMZ/blob/master/images/CustomizeGauge_001.jpg)!
+![CustomizeGauge001](https://github.com/t-kendama/RPGMakerMZ/blob/master/images/CustomizeGauge_001.jpg)
 
+### KEN_ForcedTargetState.js
+追加ダメージバフを得る装備・ステートを実装します。  
+この追加ダメージはアイテムのダメージ計算式と独立して計算します。
+
+数式を記述することで使用者の攻撃力や攻撃対象の防御力を参照し、追加ダメージを発生させることも可能です。
+
+![ExtraDamagePlus001](https://github.com/t-kendama/RPGMakerMZ/blob/master/images/ExtraDamagePlus_001.jpg)
 
 ## 規約
 [MITライセンス](https://github.com/t-kendama/RPGMakerMZ/blob/main/LICENSE)に準拠します。
