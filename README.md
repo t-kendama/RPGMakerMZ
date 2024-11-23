@@ -12,7 +12,9 @@ RPGツクールMZ用のプラグインです。
 
 ### KEN_DamageCutShield.js
 
-* 概要  
+[ダウンロード](https://github.com/t-kendama/RPGMakerMZ/blob/master/KEN_DamageCutShield.js) 
+
+* 概要
 ダメージカットを行うシールドを提供します。敵の攻撃を防ぐバリアのようなステートが作れます。  
 使い方についてはプラグイン中のヘルプを参照ください。
 
@@ -25,6 +27,8 @@ RPGツクールMZ用のプラグインです。
 ![DamageCutShield001](https://github.com/t-kendama/RPGMakerMZ/blob/master/images/DamageCutShield_001.jpg)
 
 ### KEN_ForcedTargetState.js
+
+[ダウンロード](https://github.com/t-kendama/RPGMakerMZ/blob/master/KEN_ForcedTargetState.js) 
 
 * 概要  
 ターゲットを強制するステートを実装できます。  
@@ -39,6 +43,8 @@ RPGツクールMZ用のプラグインです。
 
 ### KEN_CustomizeGauge.js
 
+[ダウンロード](https://github.com/t-kendama/RPGMakerMZ/blob/master/KEN_CustomizeGauge.js) 
+
 * 概要  
 アクターごとのパラメータ描画形式をカスタマイズします。  
 従来のゲージ形式のほか、パラメータを図形や画像形式で描画することも可能です。  
@@ -48,6 +54,8 @@ RPGツクールMZ用のプラグインです。
 ![CustomizeGauge001](https://github.com/t-kendama/RPGMakerMZ/blob/master/images/CustomizeGauge_001.jpg)
 
 ### KEN_ForcedTargetState.js
+
+[ダウンロード](https://github.com/t-kendama/RPGMakerMZ/blob/master/KEN_ExtraDamagePlus.js)
 
 * 概要  
 追加ダメージバフを得る装備・ステートを実装します。  
