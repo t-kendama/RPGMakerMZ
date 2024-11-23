@@ -40,6 +40,8 @@ RPGツクールMZ用のプラグインです。
 ![DamageCutShield001](https://github.com/t-kendama/RPGMakerMZ/blob/master/images/ForcedTargetState_002.jpg)
 
 ### KEN_CustomizeGauge.js
+
+* 概要  
 アクターごとのパラメータ描画形式をカスタマイズします。  
 従来のゲージ形式のほか、パラメータを図形や画像形式で描画することも可能です。
 
@@ -49,6 +51,8 @@ RPGツクールMZ用のプラグインです。
 ![CustomizeGauge001](https://github.com/t-kendama/RPGMakerMZ/blob/master/images/CustomizeGauge_001.jpg)
 
 ### KEN_ForcedTargetState.js
+
+* 概要  
 追加ダメージバフを得る装備・ステートを実装します。  
 この追加ダメージはアイテムのダメージ計算式と独立して計算します。
 
