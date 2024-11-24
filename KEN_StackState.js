@@ -186,21 +186,21 @@
  * 
  * @param elementRate
  * @text 属性有効度
- * @desc 属性有効度を設定します
+ * @desc 属性有効度を設定します　属性IDは重複して設定できません
  * @default []
  * @type struct<ElementRate>[]
  * @parent Resist
  * 
  * @param debuffRate
  * @text 弱体有効度
- * @desc 弱体有効度を設定します
+ * @desc 弱体有効度を設定します　能力値は重複して設定できません
  * @default []
  * @type struct<DebuffRate>[]
  * @parent Resist
  * 
  * @param stateRete
  * @text ステート有効度
- * @desc ステート有効度を設定します
+ * @desc ステート有効度を設定します　ステートIDは重複して設定できません
  * @default []
  * @type struct<StateRate>[]
  * @parent Resist
@@ -212,21 +212,21 @@
  * 
  * @param nparam
  * @text 通常能力値
- * @desc 通常能力値を設定します
+ * @desc 通常能力値を設定します　能力値は重複して設定できません
  * @default []
  * @type struct<NParam>[]
  * @parent Parameter
  * 
  * @param xparam
  * @text 追加能力値
- * @desc 追加能力値を設定します
+ * @desc 追加能力値を設定します　能力値は重複して設定できません
  * @default []
  * @type struct<XParam>[]
  * @parent Parameter
  * 
  * @param sparam
  * @text 特殊能力値
- * @desc 特殊能力値を設定します
+ * @desc 特殊能力値を設定します　能力値は重複して設定できません
  * @default []
  * @type struct<SParam>[]
  * @parent Parameter
@@ -238,7 +238,7 @@
  * 
  * @param attackState
  * @text 攻撃時ステート
- * @desc 攻撃時ステートを設定します
+ * @desc 攻撃時ステートを設定します　ステートIDは重複して設定できません
  * @default []
  * @type struct<AttackState>[]
  * @parent Attack
@@ -493,164 +493,123 @@
       return config ? config.showStackNum : false;
     }
 
-    elementRate(elementId) {
-      let result = [];
-      for(const stateConfig of pluginParam.stateConfig) {
-        if(!stateConfig.elementRate) continue;
-        for(const elementConfig of stateConfig.elementRate) {
+    elementRate(stateId, elementId) {
+      const config = this.config(stateId) || {};
+      if(config.elementRate) {
+        for(const elementConfig of config.elementRate) {
           if(elementConfig.id == elementId) {
-            result.push({stateId:stateConfig.stateId, value:(elementConfig.value || 0)});
+            return elementConfig.value;
           }
         }
       }
-      return result;
+      return 0;
     }
 
-    debuffRate(debuffId) {
-      let result = [];
-      for(const stateConfig of pluginParam.stateConfig) {
-        if(!stateConfig.debuffRate) continue;
-        for(const debuffConfig of stateConfig.debuffRate) {
+    debuffRate(stateId, debuffId) {
+      const config = this.config(stateId) || {};
+      if(config.debuffRate) {
+        for(const debuffConfig of config.debuffRate) {
           if(debuffConfig.id == debuffId) {
-            result.push({stateId:stateConfig.stateId, value:(debuffConfig.value || 0)});
+            return debuffConfig.value;
           }
+        }
+      }
+      return 0;
+    }
+
+    stateRate(stateId, stateRateId) {
+      const config = this.config(stateId) || {};
+      if(config.stateRete) {
+        for(const stateConfig of config.stateRete) {
+          if(stateConfig.id == stateRateId) {
+            return stateConfig.value;
+          }
+        }
+      }
+      return 0;
+    }
+
+    paramRate(stateId, paramId) {
+      const config = this.config(stateId) || {};
+      if(config.nparam) {
+        for(const paramConfig of config.nparam) {
+          if(paramConfig.id == paramId) {
+            return paramConfig.rateValue;
+          }
+        }
+      }
+      return 0;
+    }
+
+    paramAdd(stateId, paramId) {
+      const config = this.config(stateId) || {};
+      if(config.nparam) {
+        for(const paramConfig of config.nparam) {
+          if(paramConfig.id == paramId) {
+            return paramConfig.addValue;
+          }
+        }
+      }
+      return 0;
+    }
+
+    xparam(stateId, xparamId) {
+      const config = this.config(stateId) || {};
+      if(config.xparam) {
+        for(const paramConfig of config.xparam) {
+          if(paramConfig.id == xparamId) {
+            return paramConfig.value;
+          }
+        }
+      }
+      return 0;
+    }
+
+    sparam(stateId, sparamId) {
+      const config = this.config(stateId) || {};
+      if(config.sparam) {
+        for(const paramConfig of config.sparam) {
+          if(paramConfig.id == sparamId) {
+            return paramConfig.value;
+          }
+        }
+      }
+      return 0;
+    }
+
+    attackStateList(stateId) {
+      const config = this.config(stateId) || {};
+      let result = [];
+      if(config.attackState) {
+        for(const attackStateConfig of config.attackState) {
+          result.push(Number(attackStateConfig.id));
         }
       }
       return result;
     }
 
-    stateRate(stateId) {
-      let result = [];
-      for(const stateConfig of pluginParam.stateConfig) {
-        if(!stateConfig.stateRete) continue;
-        for(const config of stateConfig.stateRete) {
-          if(config.id == stateId) {
-            result.push({stateId:stateConfig.stateId, value:(config.value || 0)});
+    attackState(stateId, attackStateId) {
+      const config = this.config(stateId) || {};
+      if(config.attackState) {
+        for(const attackStateConfig of config.attackState) {
+          if(attackStateConfig.id == attackStateId) {
+            return attackStateConfig.value;
           }
         }
       }
-      return result;
+      return 0;
     }
 
-    paramRate(paramId) {
-      let result = [];
-      for(const stateConfig of pluginParam.stateConfig) {
-        if(!stateConfig.nparam) continue;
-        for(const nParamConfig of stateConfig.nparam) {
-          if(nParamConfig.id == paramId) {
-            result.push({stateId:stateConfig.stateId, value:(nParamConfig.rateValue || 0)});
-          }
-        }
-      }
-      return result;
+    attackSpeed(stateId) {
+      const config = this.config(stateId) || {};
+      return config.attackSpeedStack ? config.attackSpeedStack : 0;
     }
 
-    paramAdd(paramId) {
-      let result = [];
-      for(const stateConfig of pluginParam.stateConfig) {
-        if(!stateConfig.nparam) continue;
-        for(const nParamConfig of stateConfig.nparam) {
-          if(nParamConfig.id == paramId) {
-            result.push({stateId:stateConfig.stateId, value:(nParamConfig.addValue || 0)});
-          }
-        }
-      }
-      return result;
-    }
-
-    xparam(xparamId) {
-      let result = [];
-      for(const stateConfig of pluginParam.stateConfig) {
-        if(!stateConfig.xparam) continue;
-        for(const xParamConfig of stateConfig.xparam) {
-          if(xParamConfig.id == xparamId) {
-            result.push({stateId:stateConfig.stateId, value:(xParamConfig.value || 0)});
-          }
-        }
-      }
-      return result;
-    }
-
-    sparam(sparamId) {
-      let result = [];
-      for(const stateConfig of pluginParam.stateConfig) {
-        if(!stateConfig.sparam) continue;
-        for(const sParamConfig of stateConfig.sparam) {
-          if(sParamConfig.id == sparamId) {
-            result.push({stateId:stateConfig.stateId, value:(sParamConfig.value || 0)});
-          }
-        }
-      }
-      return result;
-    }
-
-    attackState(stateId) {
-      let result = [];
-      for(const stateConfig of pluginParam.stateConfig) {
-        if(!stateConfig.attackState) continue;
-        for(const attackStateConfig of stateConfig.attackState) {
-          if(attackStateConfig.id == stateId) {
-            result.push({stateId:stateConfig.stateId, value:(attackStateConfig.value || 0)});
-          }
-        }
-      }
-      return result;
-    }
-
-    attackSpeed() {
-      let result = [];
-      for(const stateConfig of pluginParam.stateConfig) {
-        if(stateConfig.attackSpeedStack){
-          result.push({stateId:stateConfig.stateId, value:stateConfig.attackSpeedStack});
-        }        
-      }
-      return result;
-    }
-
-    attackTimes() {
-      let result = [];
-      for(const stateConfig of pluginParam.stateConfig) {
-        if(stateConfig.attackTimesStack) {
-          result.push({stateId:stateConfig.stateId, value:stateConfig.attackTimesStack});
-        }        
-      }
-      return result;
+    attackTimes(stateId) {
+      const config = this.config(stateId) || {};
+      return config.attackTimesStack ? config.attackTimesStack : 0;
     }
   }
-
-  const StackTraitCache = {
-    cache: {},
-
-    // キャッシュを事前に構築
-    initialize() {
-        const allData = [...$dataItems, ...$dataSkills, ...$dataStates];
-        for (const data of allData) {
-            if (data && data.meta) {
-                this.cache[data.id] = this.parseTraits(data.meta);
-            }
-        }
-        console.log("キャッシュしたよ");
-    },
-
-    // メモタグを解析する
-    parseTraits(meta) {
-        const traits = {};
-        for (const key in meta) {
-            const match = /^GainStack\[(\d+)\]:(-?\d+)$/.exec(key);
-            if (match) {
-                const stateId = Number(match[1]);
-                const value = Number(meta[key]);
-                traits[stateId] = value;
-            }
-        }
-        return traits;
-    },
-
-    // キャッシュから取得
-    get(stateId) {
-        return this.cache[stateId] || {};
-    }
-  };
   
   const StackStateConfig = new Stack_State();
 
@@ -770,100 +729,89 @@
   };
 
   Game_BattlerBase.prototype.stackElementRate = function(elementId) {
-    const elementConfig = StackStateConfig.elementRate(elementId);
     let result = 0;
-    for (const config of elementConfig) {
-      result += Math.floor(this.evaluateStackParam(config.value) * this.stateStack(config.stateId));
+    for (const stateId of this._states) {
+      result += Math.floor(this.evaluateStackParam(StackStateConfig.elementRate(stateId, elementId)) * this.stateStack(stateId));
     }
     return result / 100;
   };
 
   Game_BattlerBase.prototype.stackDebuffRate = function(paramId) {
-    const debuffConfig = StackStateConfig.debuffRate(paramId);
     let result = 0;
-    for (const config of debuffConfig) {
-      result += Math.floor(this.evaluateStackParam(config.value) * this.stateStack(config.stateId));
+    for (const stateId of this._states) {
+      result += Math.floor(this.evaluateStackParam(StackStateConfig.debuffRate(stateId, paramId)) * this.stateStack(stateId));
     }
     return result / 100;
   };
 
-  Game_BattlerBase.prototype.stackStateRate = function(stateId) {
-    const stateConfig = StackStateConfig.stateRate(stateId);
+  Game_BattlerBase.prototype.stackStateRate = function(argStateId) {
     let result = 0;
-    for (const config of stateConfig) {
-      result += Math.floor(this.evaluateStackParam(config.value) * this.stateStack(config.stateId));
+    for (const stateId of this._states) {
+      result += Math.floor(this.evaluateStackParam(StackStateConfig.stateRate(stateId, argStateId)) * this.stateStack(stateId));
     }
     return result / 100;
   };
 
   Game_BattlerBase.prototype.paramStackRate = function(paramId) {
-    const nParamStackList = StackStateConfig.paramRate(paramId);
     let result = 0;
-    for (const config of nParamStackList) {
-      result += this.evaluateStackParam(config.value) * this.stateStack(config.stateId);
+    for (const stateId of this._states) {
+      result += this.evaluateStackParam(StackStateConfig.paramRate(stateId, paramId)) * this.stateStack(stateId);
     }
     return 1 + result / 100;
   };
 
   Game_BattlerBase.prototype.paramStackAdd = function(paramId) {
-    const nParamStackList = StackStateConfig.paramAdd(paramId);
     let result = 0;
-    for (const config of nParamStackList) {
-      result += Math.floor(this.evaluateStackParam(config.value) * this.stateStack(config.stateId));
+    for (const stateId of this._states) {
+      result += Math.floor(this.evaluateStackParam(StackStateConfig.paramAdd(stateId, paramId)) * this.stateStack(stateId));
     }
     return result;
   };
 
   Game_BattlerBase.prototype.xparamStack = function(xparamId) {
-    const xParamStackList = StackStateConfig.xparam(xparamId);
     let result = 0;
-    for (const config of xParamStackList) {
-      result += Math.floor(this.evaluateStackParam(config.value) * this.stateStack(config.stateId));
+    for (const stateId of this._states) {
+      result += Math.floor(this.evaluateStackParam(StackStateConfig.xparam(stateId, xparamId)) * this.stateStack(stateId));
     }
     return result / 100;
   };
 
   Game_BattlerBase.prototype.sparamStack = function(sparamId) {
-    const sParamStackList = StackStateConfig.sparam(sparamId);
     let result = 0;
-    for (const config of sParamStackList) {
-      result += Math.floor(this.evaluateStackParam(config.value) * this.stateStack(config.stateId));
+    for (const stateId of this._states) {
+      result += Math.floor(this.evaluateStackParam(StackStateConfig.sparam(stateId, sparamId)) * this.stateStack(stateId));
     }
     return result / 100;
   };
 
   Game_BattlerBase.prototype.attackStatesStackList = function() {
-    const attackStateConfig = StackStateConfig.attackState();
     let result = [];
-    for (const config of attackStateConfig) {
-      result.push(this.stateStack(config.stateId));
+    for (const stateId of this._states) {
+      result = result.concat(StackStateConfig.attackStateList(stateId));
     }
     return result;
   };
 
-  Game_BattlerBase.prototype.attackStateStack = function() {
-    const attackStateConfig = StackStateConfig.attackState();
+  Game_BattlerBase.prototype.attackStateStack = function(attackStateId) {
     let result = 0;
-    for (const config of attackStateConfig) {
-      result += Math.floor(this.evaluateStackParam(config.value) * this.stateStack(config.stateId));
+    for (const stateId of this._states) {
+      result += Math.floor(this.evaluateStackParam(StackStateConfig.attackState(stateId, attackStateId)) * this.stateStack(stateId));
     }
     return result;
   };
 
   Game_BattlerBase.prototype.attackSpeedStack = function() {
-    const speedConfig = StackStateConfig.attackSpeed();
     let result = 0;
-    for (const config of speedConfig) {
-      result += Math.floor(this.evaluateStackParam(config.value) * this.stateStack(config.stateId));
+    for (const stateId of this._states) {
+      result += Math.floor(this.evaluateStackParam(StackStateConfig.attackSpeed(stateId)) * this.stateStack(stateId));
     }
     return result;
   };
 
   Game_BattlerBase.prototype.attackTimesStack = function() {
-    const timesConfig = StackStateConfig.attackTimes();
     let result = 0;
-    for (const config of timesConfig) {
-      result += Math.floor(this.evaluateStackParam(config.value) * this.stateStack(config.stateId));
+    for (const stateId of this._states) {
+      result += Math.floor(this.evaluateStackParam(StackStateConfig.attackTimes(stateId)) * this.stateStack(stateId));
     }
     return result;
   };
@@ -968,7 +916,7 @@
   Game_BattlerBase.prototype.attackStatesRate = function(stateId) {
     const baseRate = _Game_BattlerBase_attackStateRate.call(this, stateId);
     if(this.isStackStateAffected()) {
-      return baseRate + this.attackStateStack();
+      return baseRate + this.attackStateStack(stateId);
     }
     return baseRate;
   };
@@ -1278,6 +1226,5 @@
       this._stackSprite.bitmap.drawText(this._stackNum, 0, 0, ImageManager.iconWidth, ImageManager.iconHeight);
     }
   };
-
   
 })();
