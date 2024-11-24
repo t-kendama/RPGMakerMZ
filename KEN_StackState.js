@@ -1003,7 +1003,6 @@
     });
   };
 
-
   //-----------------------------------------------------------------------------
   // Game_Action
   //-----------------------------------------------------------------------------
@@ -1015,36 +1014,34 @@
   };
 
   Game_Action.prototype.applyStackState = function(target) {
-    const item = this.item();
-    const battler = this.subject();
-    const regex1 = /^GainStack(\d+)$/;
-    const regex2 = /^GainStackOwn(\d+)$/;
+    const item = this.item();    
+    const regex = /^GainStack(\d+)$/;
 
     // ターゲットへのスタック処理
     Object.entries(item.meta).forEach(([key, value]) => {
-      const match = key.match(regex1); // 正規表現でキーをチェック
+      const match = key.match(regex); // 正規表現でキーをチェック
       if (match) {
         const stateId = parseInt(match[1], 10); // 整数値を取得
-        const gainValue = parseInt(value, 10) != 0 ? parseInt(value, 10) : 1; // 値なしの場合1を代入
+        const gainValue = parseInt(value, 10) != 0 ? parseInt(value, 10) : 1; 
         target.gainStack(stateId, gainValue);
         target.result().stackStates[stateId] = gainValue;
       }
-    }); 
-    
-    // 自分自身のスタック処理
-    Object.entries(item.meta).forEach(([key, value]) => {
-      const match = key.match(regex2); // 正規表現でキーをチェック
-      if (match) {
-        const stateId = parseInt(match[1], 10); // 整数値を取得
-        const gainValue = parseInt(value, 10) != 0 ? parseInt(value, 10) : 1; // 値なしの場合1を代入
-        battler.gainStack(stateId, gainValue);
-        battler.result().stackStates[stateId] = gainValue;
-      }
-    }); 
-
+    });
   };
 
   // 属性スキル使用時
+  Game_Action.prototype.applyStackStateOwn = function(/*target*/) {    
+    const battler = this.subject();
+    const traits = battler.getStackStateTrait("GainStackOwn");
+    console.log("own");
+
+    // 自分自身のスタック処理
+    Object.entries(traits).forEach(([key, value]) => {
+      const stateId = Number(key);
+      battler.gainStack(stateId, value);
+    }); 
+  };
+
 
   // 被ダメージ時
   // 属性被ダメージ時
@@ -1083,7 +1080,6 @@
     return this.checkDamageType([1, 5]);
   };
 
-
   //-----------------------------------------------------------------------------
   // BattleManager
   //-----------------------------------------------------------------------------
@@ -1091,7 +1087,13 @@
   const _BattleManager_invokeNormalAction = BattleManager.invokeNormalAction;
   BattleManager.invokeNormalAction = function(subject, target) {
     _BattleManager_invokeNormalAction.call(this, subject, target);
-    this.processEvasion(subject, target); 
+    this.processOwnEffect();
+    this.processEvasion(subject, target);
+  };
+
+  BattleManager.processOwnEffect = function() {
+    const action = this._action;
+    action.applyStackStateOwn();
   };
 
   // 反撃時
@@ -1126,17 +1128,26 @@
     return _KEN_BattleManager_applySubstitute.call(this, target);
   };
 
+
   // 回避時の共通処理
   BattleManager.processEvasion = function(subject, target) {
-    const result = target.result();    
-    if (result.evaded) {
+    const targetResult = target.result();
+    const subjectResult = subject.result();
+
+    if (targetResult.evaded) {
       const stackStateTraits = target.getStackStateTrait("StackEvaded");
       Object.entries(stackStateTraits).forEach(([key, value]) => {
         target.gainStack(Number(key), Number(value));
       });
     }
-  };
 
+    if (subjectResult.evaded) {
+      const stackStateTraits = subject.getStackStateTrait("StackEvaded");
+      Object.entries(stackStateTraits).forEach(([key, value]) => {
+        subject.gainStack(Number(key), Number(value));
+      });
+    }
+  };
 
   //-----------------------------------------------------------------------------
   // Game_ActionResult
@@ -1173,7 +1184,6 @@
     this._stackSprite = sprite;
     this.addChild(sprite);
   };
-
 
   Sprite_StateIcon.prototype.stackFontSize = function() {
     return pluginParam.stackFontSize;
