@@ -10,6 +10,8 @@ RPGツクールMZ用のプラグインです。
 | KEN_CustomizeGauge.js| アクターごとのパラメータ描画をカスタマイズ| [DL](https://github.com/t-kendama/RPGMakerMZ/blob/master/KEN_CustomizeGauge.js) |
 | KEN_ExtraDamagePlus.js| 追加ダメージプラグイン | [DL](https://github.com/t-kendama/RPGMakerMZ/blob/master/KEN_ExtraDamagePlus.js) |
 
+## プラグイン説明
+
 ### KEN_DamageCutShield.js
 
 [ダウンロード](https://github.com/t-kendama/RPGMakerMZ/blob/master/KEN_DamageCutShield.js) 
