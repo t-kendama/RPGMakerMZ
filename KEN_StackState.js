@@ -66,13 +66,37 @@
  * 
  * <StackHpDamageReceive[ステートID]:スタック増減値>
  * 記述欄：武器・防具・ステート
- * 被HPダメージ時スタックが増減します。
- * イベントコマンドの「HPの増減」でこの効果は発動しません。
+ * HPダメージを受けた時、スタックが増減します。
+ * ダメージが0の場合、効果は発動しません。
  * 
- * <StackHpDamageRecover[ステートID]:スタック増減値>
+ * <StackMpDamageReceive[ステートID]:スタック増減値>
  * 記述欄：武器・防具・ステート
- * HP回復時スタックが増減します。
- * イベントコマンドの「HPの増減」でこの効果は発動しません。
+ * MPダメージを受けた時、スタックが増減します。
+ * ダメージが0の場合、効果は発動しません。
+ * 
+ * <StackHpLoss[ステートID]:スタック増減値>
+ * 記述欄：武器・防具・ステート
+ * HP減少時スタックが増減します。
+ * 
+ * <StackHpGain[ステートID]:スタック増減値>
+ * 記述欄：武器・防具・ステート
+ * HP増加時スタックが増減します。
+ * 
+ * <StackMpLoss[ステートID]:スタック増減値>
+ * 記述欄：武器・防具・ステート
+ * MP減少時スタックが増減します。
+ * 
+ * <StackMpGain[ステートID]:スタック増減値>
+ * 記述欄：武器・防具・ステート
+ * MP増加時スタックが増減します。
+ * 
+ * <StackTpLoss[ステートID]:スタック増減値>
+ * 記述欄：武器・防具・ステート
+ * TP減少時スタックが増減します。
+ * 
+ * <StackTpGain[ステートID]:スタック増減値>
+ * 記述欄：武器・防具・ステート
+ * TP増加時スタックが増減します。
  * 
  * <StackCritical[ステートID]:スタック増減値>
  * 記述欄：武器・防具・ステート
@@ -658,11 +682,6 @@
       this._stackStates[stateId] = Math.max(sum, 0);
     }
     this.autoRemoveStateWithStack(stateId);
-    this.onStackChange(stateId, previousStack, this._stackStates[stateId]);
-  };
-
-  Game_BattlerBase.prototype.onStackChange = function(stateId, oldValue, newValue) {
-    // 仮定義
   };
 
   // ステートが付与されていない状態でスタックが増加した時、ステート自動付与
@@ -1003,6 +1022,66 @@
     });
   };
 
+  const _Game_Battler_gainMp = Game_Battler.prototype.gainMp;
+  Game_Battler.prototype.gainMp = function(value) {
+    _Game_Battler_gainMp.call(this, value);
+    const stackStateTraitsMpGain = this.getStackStateTrait("StackMpGain");
+    const stackStateTraitsMpLoss = this.getStackStateTrait("StackMpLoss");
+
+    // MP増加
+    Object.entries(stackStateTraitsMpGain).forEach(([key, stack]) => {
+      if(value > 0) {
+        this.gainStack(Number(key), Number(stack));
+      }
+    });
+    // MP減少
+    Object.entries(stackStateTraitsMpLoss).forEach(([key, stack]) => {
+      if(value < 0) {
+        this.gainStack(Number(key), Number(stack));
+      }
+    });
+  };
+
+  const _Game_Battler_gainTp = Game_Battler.prototype.gainTp;
+  Game_Battler.prototype.gainTp = function(value) {
+    _Game_Battler_gainTp.call(this, value);
+    const stackStateTraitsTpGain = this.getStackStateTrait("StackTpGain");
+    const stackStateTraitsTpLoss = this.getStackStateTrait("StackTpLoss");
+
+    // MP増加
+    Object.entries(stackStateTraitsTpGain).forEach(([key, stack]) => {
+      if(value > 0) {
+        this.gainStack(Number(key), Number(stack));
+      }
+    });
+    // MP減少
+    Object.entries(stackStateTraitsTpLoss).forEach(([key, stack]) => {
+      if(value < 0) {
+        this.gainStack(Number(key), Number(stack));
+      }
+    });
+  };
+
+  const _Game_Battler_gainSilentTp = Game_Battler.prototype.gainSilentTp;
+  Game_Battler.prototype.gainSilentTp = function(value) {
+    _Game_Battler_gainSilentTp.call(this, value);
+    const stackStateTraitsTpGain = this.getStackStateTrait("StackTpGain");
+    const stackStateTraitsTpLoss = this.getStackStateTrait("StackTpLoss");
+
+    // TP増加
+    Object.entries(stackStateTraitsTpGain).forEach(([key, stack]) => {
+      if(value > 0) {
+        this.gainStack(Number(key), Number(stack));
+      }
+    });
+    // TP減少
+    Object.entries(stackStateTraitsTpLoss).forEach(([key, stack]) => {
+      if(value < 0) {
+        this.gainStack(Number(key), Number(stack));
+      }
+    });
+  };
+
   //-----------------------------------------------------------------------------
   // Game_Action
   //-----------------------------------------------------------------------------
@@ -1033,7 +1112,6 @@
   Game_Action.prototype.applyStackStateOwn = function(/*target*/) {    
     const battler = this.subject();
     const traits = battler.getStackStateTrait("GainStackOwn");
-    console.log("own");
 
     // 自分自身のスタック処理
     Object.entries(traits).forEach(([key, value]) => {
@@ -1042,27 +1120,33 @@
     }); 
   };
 
-
-  // 被ダメージ時
-  // 属性被ダメージ時
+  // 被HPダメージ時
   const _Game_Action_executeHpDamage = Game_Action.prototype.executeHpDamage;
   Game_Action.prototype.executeHpDamage = function(target, value) {
     _Game_Action_executeHpDamage.call(this, target, value);
-    const stackStateTraitsHpDamage = target.getStackStateTrait("StackHpDamageReceive");
-    const stackStateTraitsHpRecover = target.getStackStateTrait("StackHpDamageRecover");
+    if(value > 0) {
+      const stackStateTraits = target.getStackStateTrait("StackHpDamageReceive");
+      Object.entries(stackStateTraits).forEach(([key, stack]) => {
+        if(this.isHpDamageOrDrain()) {
+          target.gainStack(Number(key), Number(stack));
+        }
+      });
+    }    
+  };
 
-    // HPダメージ
-    Object.entries(stackStateTraitsHpDamage).forEach(([key, stack]) => {
-      if(this.isHpDamageOrDrain()) {
-        target.gainStack(Number(key), Number(stack));
-      }      
-    });
-    // HP回復
-    Object.entries(stackStateTraitsHpRecover).forEach(([key, stack]) => {
-      if(this.isHpRecover()) {
-        target.gainStack(Number(key), Number(stack));
-      }
-    });    
+  // 被MPダメージ時
+  const _Game_Action_executeMpDamage = Game_Action.prototype.executeMpDamage;
+  Game_Action.prototype.executeMpDamage = function(target, value) {
+    _Game_Action_executeMpDamage.call(this, target, value);
+
+    if(value > 0) {
+      const stackStateTraits = target.getStackStateTrait("StackMpDamageReceive");
+      Object.entries(stackStateTraits).forEach(([key, stack]) => {
+        if(this.isMpDamageOrDrain()) {
+          target.gainStack(Number(key), Number(stack));
+        }      
+      });  
+    }
   };
 
   // 会心時
@@ -1078,6 +1162,10 @@
 
   Game_Action.prototype.isHpDamageOrDrain = function() {
     return this.checkDamageType([1, 5]);
+  };
+
+  Game_Action.prototype.isMpDamageOrDrain = function() {
+    return this.checkDamageType([2, 6]);
   };
 
   //-----------------------------------------------------------------------------
