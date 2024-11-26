@@ -1,12 +1,14 @@
 /*
 ----------------------------------------------------------------------------
- KEN_DamageCutState v1.0.0
+ KEN_DamageCutState v1.0.1
 ----------------------------------------------------------------------------
  (C)2024 KEN
  This software is released under the MIT License.
  http://opensource.org/licenses/mit-license.php
 ----------------------------------------------------------------------------
  Version
+ 1.0.1 2024/11/26 HP再生率のポップパップ表記が0になってしまう不具合修正
+                  タグ表記方法が大文字と小文字が混在していたため統一
  1.0.0 2024/10/28 シールド減少時のポップアップ処理追加
                   シールド最大時の描画処理修正
  0.9.0 2024/10/26 シールドを外枠に表示する機能の追加
@@ -15,7 +17,7 @@
                   非戦闘時はターン数を表示しない仕様に変更
  0.8.2 2024/10/20 シールド獲得時のバトルログで耐久値が表示されない不具合修正
                   被ダメージ時にシールド減少量を表示する機能追加
- 0.8.1 2024/10/20 スリップダメージが少数になる不具合修正
+ 0.8.1 2024/10/20 スリップダメージが小数になる不具合修正
  0.8.0 2024/10/20 ベータ版公開
 ----------------------------------------------------------------------------
 */
@@ -23,7 +25,7 @@
  * @target MZ
  * @plugindesc ダメージカットを行うシールドを提供します
  * @author KEN
- * @version 0.9.0
+ * @version 1.0.1
  * @url https://github.com/t-kendama/RPGMakerMZ/blob/main/KEN_DamageCutShield.js
  * 
  * @help
@@ -63,17 +65,17 @@
  * 【シールドの付与】
  * アイテムまたはスキル欄のメモ欄に設定します。
  * 
- * <damageCutShield: 数値 or 数式>
+ * <DamageCutShield: 数値 or 数式>
  * 記述欄：アイテム・スキル
  * アイテム、スキルの対象者にシールドを付与します。
  * シールド耐久値はスクリプトも指定可能です。
  * 例．
- * <damageCutShield: 100> シールドが100増加します
- * <damageCutShield: -50> シールドが50減少します
- * <damageCutShield: a.mat> スキル使用者の魔力分のシールドが増加します
+ * <DamageCutShield: 100> シールドが100増加します
+ * <DamageCutShield: -50> シールドが50減少します
+ * <DamageCutShield: a.mat> スキル使用者の魔力分のシールドが増加します
  * 
  * 【その他の設定】
- * <penetrateShield>
+ * <PenetrateShield>
  * 記述欄：アイテム・スキル
  * このタグが記述されたアイテム・スキルはシールドを無視してダメージを与えます。
  * 
@@ -96,19 +98,19 @@
  * このタグが指定された装備・ステートが付与されている場合、
  * シールドが得られなくなります。
  * 
- * <damageWithShield: 数値>
+ * <DamageWithShield: 数値>
  * 記述欄：武器、防具、ステート
  * シールド耐久値を減らすダメージを設定します。
  * 継続的にダメージを与える装備やステートを実装するときに使用します。
  * 
  * 記述例．
- * <damageWithShield: 20> ターン経過時、20ダメージを与えます
- * <damageWithShield: a.mhp * 0.1> ターン経過時、バトラーの最大HP10%のダメージを与えます
+ * <DamageWithShield: 20> ターン経過時、20ダメージを与えます
+ * <DamageWithShield: a.mhp * 0.1> ターン経過時、バトラーの最大HP10%のダメージを与えます
  * 
- * <damageCutShieldMax: 数値 or 数式>
+ * <DamageCutShieldMax: 数値 or 数式>
  * 記述欄：アクター、エネミー
  * バトラー個別にシールド耐久値の最大値を設定します。
- * <damageCutShieldMax: a.mhp> と表記するとシールド耐久値がバトラーの最大HPの値に
+ * <DamageCutShieldMax: a.mhp> と表記するとシールド耐久値がバトラーの最大HPの値に
  * 制限されます。
  * 
  * 
@@ -622,9 +624,9 @@
   Game_BattlerBase.prototype.damageCutShieldMax = function() {
     let formula;
     if(this.isActor()) {
-      formula = $dataActors[this.actorId()].meta.damageCutShieldMax;
+      formula = $dataActors[this.actorId()].meta.DamageCutShieldMax;
     } else if (this.isEnemy()) {
-      formula = $dataEnemies[this.enemyId()].meta.damageCutShieldMax;
+      formula = $dataEnemies[this.enemyId()].meta.DamageCutShieldMax;
     }
     try {
       const a = this;
@@ -723,18 +725,18 @@
     return Math.max(rate, 0);
   };  
 
-  const _KEN_Game_Battler_onTurnEnd = Game_Battler.prototype.onTurnEnd;
+  const _Game_Battler_onTurnEnd = Game_Battler.prototype.onTurnEnd;
   Game_Battler.prototype.onTurnEnd = function(){
-    _KEN_Game_Battler_onTurnEnd.call(this);
+    _Game_Battler_onTurnEnd.call(this);
     this.reduceHpWithShield();      // スリップダメージ処理
     if(!this.isStateAffected(STATEID_Shield)) {
       this.setDamageCutShield(0);   // シールドがなくなった場合ステートを解除
     }
   };
 
-  const _KEN_Game_Battler_onBattleEnd = Game_Battler.prototype.onBattleEnd;
+  const _Game_Battler_onBattleEnd = Game_Battler.prototype.onBattleEnd;
   Game_Battler.prototype.onBattleEnd = function(){
-    _KEN_Game_Battler_onBattleEnd.call(this);
+    _Game_Battler_onBattleEnd.call(this);
     this.clearDamageCutShieldOnBattleEnd();
   };
 
@@ -776,7 +778,13 @@
 
   // シールド状態を適用したスリップダメージ
   Game_Battler.prototype.reduceHpWithShield = function() {
-    this.executeHpDamageWithShield(this.slipDamageWithShield());
+    if(this.isStateAffected(STATEID_Shield)){
+      const value = this.slipDamageWithShield();
+      console.log(value);
+      if (value > 0) {
+        this.executeHpDamageWithShield(value);
+      }
+    }    
   };
   
   // スリップダメージ値の取得
@@ -822,7 +830,7 @@
     target.result().previousShield = shieldValue;
     let blockedValue = value;
     const item = this.item();
-    const penetrateFlag = item.meta.penetrateShield;  // シールド貫通属性
+    const penetrateFlag = item.meta.PenetrateShield;  // シールド貫通属性
 
     // HPダメージのときのみシールド発動
     if( value > 0 && !penetrateFlag && target.isShieldState()) {
@@ -846,7 +854,7 @@
 
   Game_Action.prototype.isShieldAction = function() {
     const item = this.item();
-    return item && item.meta.damageCutShield;
+    return item && item.meta.DamageCutShield;
   };
 
   const _KEN_Game_Action_applyItemUserEffect = Game_Action.prototype.applyItemUserEffect;
@@ -857,7 +865,7 @@
 
   Game_Action.prototype.applyItemDamageCutShield = function(target) {
     const item = this.item();
-    const value = this.evalMetaFormula(target, item.meta.damageCutShield);
+    const value = this.evalMetaFormula(target, item.meta.DamageCutShield);
     if(value != 0) {
       const gainValue = target.gainDamageCutShield(value);  // バトラーのシールドを増減
       target.result().gainShieldValue = gainValue;
@@ -891,7 +899,7 @@
   const _KEN_Game_Action_hasItemAnyValidEffects = Game_Action.prototype.hasItemAnyValidEffects;
   Game_Action.prototype.hasItemAnyValidEffects = function(target) {
     const item = this.item();
-    return _KEN_Game_Action_hasItemAnyValidEffects.call(this, target) || item.meta.damageCutShield;
+    return _KEN_Game_Action_hasItemAnyValidEffects.call(this, target) || item.meta.DamageCutShield;
   };
 
   //====================================================================
@@ -1249,7 +1257,7 @@
     }
 
     setup(target){
-      const result = target.result();      
+      const result = target.result();
       if (Math.abs(result.lossShieldValue) > 0) {
         if(POPUP_shieldIcon > 0) this.createIcon(-result.lossShieldValue);
         this._colorType = 0;
