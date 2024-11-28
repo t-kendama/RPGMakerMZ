@@ -123,7 +123,7 @@
  * 
  * 
  * -------------------------  スクリプト  -------------------------
- * $gameActors.actor(アクターID).stateStack(ステートID, スタック増減値)
+ * $gameActors.actor(アクターID).stateStack(ステートID)
  * アクターのスタック値を取得
  *
  * $gameActors.actor(アクターID).gainStack(ステートID, スタック増減値)
