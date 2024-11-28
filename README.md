@@ -75,9 +75,13 @@ RPGツクールMZ用のプラグインです。
 累積ステートは内部にスタック（累積する値）を持ち、スタックごとに効果が増幅するようになります。
 例．スタックごとにHP減少量が増加するステート
 
+![StackState001](https://github.com/t-kendama/RPGMakerMZ/blob/master/images/StackState_001.png)
+
 * 使い方  
 累積ステートの定義はプラグインパラメータ上で設定します。累積値は数値のほかスクリプトが使用可能です。  
 スタックの操作はアイテム・スキルの効果で発動するほか、特定の条件下でスタックを増減させることも可能です。
+
+![StackState002](https://github.com/t-kendama/RPGMakerMZ/blob/master/images/StackState_002.png)
 
 ## 規約
 [MITライセンス](https://github.com/t-kendama/RPGMakerMZ/blob/main/LICENSE)に準拠します。
