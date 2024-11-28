@@ -66,7 +66,7 @@ RPGツクールMZ用のプラグインです。
 
 ![ExtraDamagePlus001](https://github.com/t-kendama/RPGMakerMZ/blob/master/images/ExtraDamagePlus_001.jpg)
 
-### KEN_ForcedTargetState.js
+### KEN_StackState.js
 
 [ダウンロード](https://github.com/t-kendama/RPGMakerMZ/blob/master/KEN_StackState.js) 
 
