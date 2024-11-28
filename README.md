@@ -17,7 +17,7 @@ RPGツクールMZ用のプラグインです。
 
 [ダウンロード](https://github.com/t-kendama/RPGMakerMZ/blob/master/KEN_DamageCutShield.js) 
 
-* 概要
+* 概要  
 ダメージカットを行うシールドを提供します。敵の攻撃を防ぐバリアのようなステートが作れます。  
 使い方についてはプラグイン中のヘルプを参照ください。
 
@@ -82,6 +82,42 @@ RPGツクールMZ用のプラグインです。
 スタックの操作はアイテム・スキルの効果で発動するほか、特定の条件下でスタックを増減させることも可能です。
 
 ![StackState002](https://github.com/t-kendama/RPGMakerMZ/blob/master/images/StackState_002.png)
+
+* 設定項目
+
+| 設定項目 | 説明 |
+| ------------- | ------------- | 
+|ステートID|累積ステートを適用するステートIDを指定します。|
+|最大スタック|スタックの上限を設定します。0の場合、上限が無くなります。|
+|スタック初期値|ステート付与時に代入されるスタック値を設定します。|
+|ステート自動付与|ステートが付与されていない状態でスタックが増加した時、ステートを自動付与します。|
+|ステート自動解除|スタックが0になった時、ステートを自動解除します。|
+|ターン数とスタック同期|スタックをステートターン数と同期します。スタックが上昇するとステートの残りターン数も連動して増加します。|
+|戦闘中スタック数を表示|戦闘中、スタック数をステートアイコン上に表示します。|
+|特性|スタック上昇時の効果を設定します。|
+
+* 累積ステートの設定例  
+本プラグインの簡単な設定例です。
+
+【スタックの数だけ攻撃力増加】  
+シンプルな強化バフ。  
+![StackState002](https://github.com/t-kendama/RPGMakerMZ/blob/master/images/StackState_ex01.png)
+
+【スタックの数＋バトラーのレベルに応じて攻撃力増加】  
+スクリプトを記述することで、バフ量をさらに細かく指定できます。  
+![StackState002](https://github.com/t-kendama/RPGMakerMZ/blob/master/images/StackState_ex02.png)
+
+【スタック数ごとにHPが減る状態異常】  
+スタックを増やすことでスリップダメージを増幅させるステート。  
+![StackState002](https://github.com/t-kendama/RPGMakerMZ/blob/master/images/StackState_ex03.png)
+
+【１回だけ回避するステート】  
+特徴欄を記述せず、スタック機能だけ使った設定方法も可能です。    
+![StackState002](https://github.com/t-kendama/RPGMakerMZ/blob/master/images/StackState_ex04.png)  
+
+このように回避した時だけスタック数を減るようにすることで、「１回だけ回避できるステート」を作ることも出来ます。  
+![StackState002](https://github.com/t-kendama/RPGMakerMZ/blob/master/images/StackState_ex05.png)
+
 
 ## 規約
 [MITライセンス](https://github.com/t-kendama/RPGMakerMZ/blob/main/LICENSE)に準拠します。
