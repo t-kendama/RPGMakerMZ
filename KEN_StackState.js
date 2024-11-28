@@ -1,20 +1,20 @@
 /*
 ----------------------------------------------------------------------------
- KEN_StackState v0.9.0
+ KEN_StackState v1.0.0
 ----------------------------------------------------------------------------
  (C)2024 KEN
  This software is released under the MIT License.
  http://opensource.org/licenses/mit-license.php
 ----------------------------------------------------------------------------
  Version
- 0.9.0 2024/11/23 β版
+ 1.0.0 2024/11/28 初版
 ----------------------------------------------------------------------------
 */
 /*:
  * @target MZ
  * @plugindesc 累積ステートプラグイン
  * @author KEN
- * @version 0.9.0
+ * @version 1.0.0
  * @url https://github.com/t-kendama/RPGMakerMZ/edit/master/KEN_StackState.js
  * 
  * @help
@@ -128,6 +128,30 @@
  * 
  * 
  * 
+ * 
+ * @command GainStateStack
+ * @text アクターのスタック値を増減
+ * @desc アクターの累積ステートの値を増減します
+ *
+ * @arg actorId
+ * @text アクターID
+ * @desc スタックを変更するアクターID
+ * @type actor
+ * @default 1
+ * 
+ * @arg stateId
+ * @text ステートID
+ * @desc 累積ステート
+ * @type state
+ * @default 1
+ * 
+ * @arg stackNum
+ * @text 増減値
+ * @desc 増減するスタック値
+ * @type number
+ * @default 0
+ * @max 999
+ * @min -999
  * 
  * 
  * @param stateConfig
@@ -637,13 +661,19 @@
   
   const StackStateConfig = new Stack_State();
 
+  PluginManager.registerCommand(PLUGIN_NAME, 'GainStateStack', args => {
+    if (args.stackNum && StackStateConfig.isStackState(args.stateId)) {
+      $gameActors.actor(args.actorId).gainStack(Number(args.stateId), Number(args.stackNum));
+    }
+  });
+
   //-----------------------------------------------------------------------------
   // Game_BattlerBase
   //-----------------------------------------------------------------------------
   const _Game_BattlerBase_initMembers = Game_BattlerBase.prototype.initMembers;
   Game_BattlerBase.prototype.initMembers = function() {
-    _Game_BattlerBase_initMembers.call(this);
     this.clearStackStates();
+    _Game_BattlerBase_initMembers.call(this);    
   };
 
   Game_BattlerBase.prototype.clearStackStates = function() {
@@ -660,11 +690,14 @@
     // 条件：累積ステートかつアイコンが設定されている
     const battler = this;
     return this.states().map(function(state) {
-      if(StackStateConfig.isStackState(state.id) && state.iconIndex > 0 && StackStateConfig.isDisplayStack(state.id)){
-        return battler.stateStack(state.id);
-      } else {
-        return 0;
+      console.log(state.id);
+      console.log(StackStateConfig.isDisplayStack(state.id));
+      if(StackStateConfig.isStackState(state.id)){
+        if(StackStateConfig.isDisplayStack(state.id)) {
+          return battler.stateStack(state.id);
+        }
       }
+      return NaN;
     });    
   };
 
@@ -725,6 +758,8 @@
   const _Game_BattlerBase_eraseState = Game_BattlerBase.prototype.eraseState;
   Game_BattlerBase.prototype.eraseState = function(stateId) {
     _Game_BattlerBase_eraseState.call(this, stateId);
+    console.log(stateId);
+    console.log(this._stackStates);
     delete this._stackStates[stateId];
   };
 
@@ -733,7 +768,7 @@
     _Game_BattlerBase_updateStateTurns.call(this);
     Object.entries(this._stackStates).forEach(([key]) => {
       if(StackStateConfig.isStackState(key) && StackStateConfig.isSyncTurnCount(key)){
-        this._stackStates[key] = this._stackStates[key] - 1;
+        this.gainStack(Number(key), -1);
       }
     });
   };
@@ -842,6 +877,7 @@
     }
     try {
       const a = this;
+      const actor = this;
       const value = Math.floor(eval(formula));
       return isNaN(value) ? 0 : value;
     } catch (e) {
@@ -1303,7 +1339,7 @@
             this._animationIndex = 0;
         }
         this._iconIndex = icons[this._animationIndex];
-        this._stackNum = stacks[this._animationIndex] ? stacks[this._animationIndex] : 0;
+        this._stackNum = stacks[this._animationIndex];
       } else {
         this._animationIndex = 0;
         this._iconIndex = 0;
