@@ -129,9 +129,9 @@
  * 
  * 
  * 
- * @command GainStateStack
+ * @command GainStateStackActor
  * @text アクターのスタック値を増減
- * @desc アクターの累積ステートの値を増減します
+ * @desc アクターの累積ステートの値を増減します。
  *
  * @arg actorId
  * @text アクターID
@@ -152,6 +152,33 @@
  * @default 0
  * @max 999
  * @min -999
+ * 
+ * 
+ * @command GainStateStackEnemy
+ * @text エネミーのスタック値を増減（戦闘中のみ可）
+ * @desc エネミーの累積ステートの値を増減します。戦闘中のみ使用可能です。
+ *
+ * @arg enemyIndex
+ * @text エネミーインデックス
+ * @desc スタックを変更するエネミーのインデックス番号
+ * @type number
+ * @default 1
+ * @min 1
+ * 
+ * @arg stateId
+ * @text ステートID
+ * @desc 累積ステート
+ * @type state
+ * @default 1
+ * 
+ * @arg stackNum
+ * @text 増減値
+ * @desc 増減するスタック値
+ * @type number
+ * @default 0
+ * @max 999
+ * @min -999
+ * 
  * 
  * 
  * @param stateConfig
@@ -661,9 +688,18 @@
   
   const StackStateConfig = new Stack_State();
 
-  PluginManager.registerCommand(PLUGIN_NAME, 'GainStateStack', args => {
+  PluginManager.registerCommand(PLUGIN_NAME, 'GainStateStackActor', args => {
     if (args.stackNum && StackStateConfig.isStackState(args.stateId)) {
       $gameActors.actor(args.actorId).gainStack(Number(args.stateId), Number(args.stackNum));
+    }
+  });
+
+  PluginManager.registerCommand(PLUGIN_NAME, 'GainStateStackEnemy', args => {
+    if (args.stackNum && StackStateConfig.isStackState(args.stateId) && $gameParty.inBattle()) {
+      const index = Number(args.enemyIndex) - 1;
+      if ($gameTroop.members()[index]) {
+        $gameTroop.members()[index].gainStack(Number(args.stateId), Number(args.stackNum));
+      }      
     }
   });
 
@@ -690,8 +726,6 @@
     // 条件：累積ステートかつアイコンが設定されている
     const battler = this;
     return this.states().map(function(state) {
-      console.log(state.id);
-      console.log(StackStateConfig.isDisplayStack(state.id));
       if(StackStateConfig.isStackState(state.id)){
         if(StackStateConfig.isDisplayStack(state.id)) {
           return battler.stateStack(state.id);
@@ -758,8 +792,6 @@
   const _Game_BattlerBase_eraseState = Game_BattlerBase.prototype.eraseState;
   Game_BattlerBase.prototype.eraseState = function(stateId) {
     _Game_BattlerBase_eraseState.call(this, stateId);
-    console.log(stateId);
-    console.log(this._stackStates);
     delete this._stackStates[stateId];
   };
 
