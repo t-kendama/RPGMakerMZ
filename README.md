@@ -9,6 +9,7 @@ RPGツクールMZ用のプラグインです。
 | KEN_ForcedTargetState.js | ターゲットを強制するステート  | [DL](https://github.com/t-kendama/RPGMakerMZ/blob/master/KEN_ForcedTargetState.js) |
 | KEN_CustomizeGauge.js| アクターごとのパラメータ描画をカスタマイズ| [DL](https://github.com/t-kendama/RPGMakerMZ/blob/master/KEN_CustomizeGauge.js) |
 | KEN_ExtraDamagePlus.js| 追加ダメージプラグイン | [DL](https://github.com/t-kendama/RPGMakerMZ/blob/master/KEN_ExtraDamagePlus.js) |
+| KEN_StackState.js | 累積ステートプラグイン | [DL](https://github.com/t-kendama/RPGMakerMZ/blob/master/KEN_StackState.js) |
 
 ## プラグイン説明
 
@@ -60,11 +61,21 @@ RPGツクールMZ用のプラグインです。
 [ダウンロード](https://github.com/t-kendama/RPGMakerMZ/blob/master/KEN_ExtraDamagePlus.js)
 
 * 概要  
-追加ダメージバフを得る装備・ステートを実装します。  
-この追加ダメージはアイテムのダメージ計算式と独立して計算します。  
+追加ダメージバフを得る装備・ステートを実装します。この追加ダメージはアイテムのダメージ計算式と独立して計算します。  
 数式を記述することで使用者の攻撃力や攻撃対象の防御力を参照し、追加ダメージを発生させることも可能です。
 
 ![ExtraDamagePlus001](https://github.com/t-kendama/RPGMakerMZ/blob/master/images/ExtraDamagePlus_001.jpg)
+
+### KEN_ForcedTargetState.js
+
+* 概要  
+効果を累積するステート（以下累積ステート）を作成します。
+累積ステートは内部にスタック（累積する値）を持ち、スタックごとに効果が増幅するようになります。
+例．スタックごとにHP減少量が増加するステート
+
+* 使い方  
+累積ステートの定義はプラグインパラメータ上で設定します。累積値は数値のほかスクリプトが使用可能です。  
+スタックの操作はアイテム・スキルの効果で発動するほか、特定の条件下でスタックを増減させることも可能です。
 
 ## 規約
 [MITライセンス](https://github.com/t-kendama/RPGMakerMZ/blob/main/LICENSE)に準拠します。
