@@ -42,7 +42,7 @@
  * 「ステート自動付与」の項目をONにしてください。
  * 
  * 設定例については以下のページも参照ください。
- * https://github.com/t-kendama/RPGMakerMZ?tab=readme-ov-file#ken_forcedtargetstatejs-2
+ * https://github.com/t-kendama/RPGMakerMZ/blob/master/README.md#ken_stackstatejs
  * 
  * -------------------------    メモ欄設定    -------------------------
  * 
