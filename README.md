@@ -68,6 +68,8 @@ RPGツクールMZ用のプラグインです。
 
 ### KEN_ForcedTargetState.js
 
+[ダウンロード](https://github.com/t-kendama/RPGMakerMZ/blob/master/KEN_StackState.js) 
+
 * 概要  
 効果を累積するステート（以下累積ステート）を作成します。
 累積ステートは内部にスタック（累積する値）を持ち、スタックごとに効果が増幅するようになります。
