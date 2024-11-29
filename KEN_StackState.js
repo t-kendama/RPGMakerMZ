@@ -1,12 +1,14 @@
 /*
 ----------------------------------------------------------------------------
- KEN_StackState v1.0.0
+ KEN_StackState v1.0.1
 ----------------------------------------------------------------------------
  (C)2024 KEN
  This software is released under the MIT License.
  http://opensource.org/licenses/mit-license.php
 ----------------------------------------------------------------------------
  Version
+ 1.0.1 2024/11/30 与ダメージ時にスタックを上昇させる機能追加
+                  ステート解除条件に「戦闘終了時に解除」にチェックを入れるとステート自動付与が行われなかった不具合修正
  1.0.0 2024/11/28 初版
 ----------------------------------------------------------------------------
 */
@@ -14,7 +16,7 @@
  * @target MZ
  * @plugindesc 累積ステートプラグイン
  * @author KEN
- * @version 1.0.0
+ * @version 1.0.1
  * @url https://github.com/t-kendama/RPGMakerMZ/edit/master/KEN_StackState.js
  * 
  * @help
@@ -34,15 +36,45 @@
  * 特定の条件下でスタックを増減させることも可能です。
  * スタックの増減に関わる設定はデータベースのメモ欄に記述します。
  * 
- * 【スタック増加に関する補足】
+ * 補足；
  * スタックの増加にはステートの付与効果はないため、事前に累積ステートを
  * 付与しておく必要があります。
- * 
- * スキル効果の特徴にステートの付与を付けるか、プラグインパラメータの
+ * スタック増加だけでステートを付与したい場合、プラグインパラメータの
  * 「ステート自動付与」の項目をONにしてください。
  * 
+ * 
+ * 【プラグインパラメータ説明】
+ * ・ステートID
+ * 累積ステートの対象となるステートIDを設定します。
+ * ステートIDは重複して設定しないでください。
+ * 
+ * ・最大スタック
+ * 累積ステートの最大スタックを設定します。
+ * ０を設定すると上限値が無くなります。
+ * 
+ * ・スタック初期値
+ * 累積ステートが付与された時に代入されるスタック値を設定します。
+ * 
+ * ・ステート自動付与
+ * ステートが付与されていない状態でスタックを増加した時、
+ * ステートを自動で付与します。
+ * 
+ * ・ステート自動解除
+ * スタックが0になった時、ステートを自動解除します。
+ * 
+ * ・ターン数とスタック同期
+ * ステートのターン数とスタックを連動させる機能です。
+ * ターン数の経過と共にスタックが減少するようになります。
+ * スタックが増加した場合、ステートのターン数も増加します。
+ * 
+ * ・戦闘中スタック数を表示
+ * 戦闘中、スタック値をアイコン上に表示します。
+ * 
+ * ・特徴
+ * 累積する効果を設定します。
+ * 
  * 設定例については以下のページも参照ください。
- * https://github.com/t-kendama/RPGMakerMZ/blob/master/README.md#ken_stackstatejs
+ * https://github.com/t-kendama/RPGMakerMZ?tab=readme-ov-file#ken_stackstatejs
  * 
  * -------------------------    メモ欄設定    -------------------------
  * 
@@ -60,12 +92,17 @@
  * 
  * <GainStackOwn[ステートID]:スタック増減値>
  * 記述欄：アイテム・スキル
- * このタグが設定されたアイテム・スキル使用者のスタックを増減します。
+ * このタグが設定されたアイテム・スキル使用者のスタックが増減します。
  * 
  * 
  * 【応用編】
  * 特定の条件下でスタックを増減させたい時の設定です。
  * この効果を持つバトラーが条件を満たした時、スタック数が増減します。
+ * 
+ * <StackHpDamageAttack[ステートID]:スタック増減値>
+ * 記述欄：武器・防具・ステート
+ * HPダメージを与えた時、攻撃対象のスタックが増減します。
+ * ダメージが0の場合、効果は発動しません。
  * 
  * <StackHpDamageReceive[ステートID]:スタック増減値>
  * 記述欄：武器・防具・ステート
@@ -123,7 +160,7 @@
  * 
  * 
  * -------------------------  スクリプト  -------------------------
- * $gameActors.actor(アクターID).stateStack(ステートID)
+ * $gameActors.actor(アクターID).stateStack(ステートID, スタック増減値)
  * アクターのスタック値を取得
  *
  * $gameActors.actor(アクターID).gainStack(ステートID, スタック増減値)
@@ -756,13 +793,13 @@
 
   // ステートが付与されていない状態でスタックが増加した時、ステート自動付与
   Game_BattlerBase.prototype.autoAddStateWithStack = function(stateId, value) {
-    if(StackStateConfig.autoStateAdd(stateId) && !this.isStateBattleOnly(stateId) && value > 0) {
+    if(StackStateConfig.autoStateAdd(stateId) && this.isStateBattleOnly(stateId) && value > 0) {      
       this.addState(stateId);
     }
   };
 
   Game_BattlerBase.prototype.isStateBattleOnly = function(stateId) {
-    return $dataStates[stateId].removeAtBattleEnd;
+    return $dataStates[stateId].removeAtBattleEnd ? $gameParty.inBattle() : true;
   };
 
   // スタック0のときステート自動解除
@@ -1119,13 +1156,13 @@
     const stackStateTraitsTpGain = this.getStackStateTrait("StackTpGain");
     const stackStateTraitsTpLoss = this.getStackStateTrait("StackTpLoss");
 
-    // MP増加
+    // TP増加
     Object.entries(stackStateTraitsTpGain).forEach(([key, stack]) => {
       if(value > 0) {
         this.gainStack(Number(key), Number(stack));
       }
     });
-    // MP減少
+    // TP減少
     Object.entries(stackStateTraitsTpLoss).forEach(([key, stack]) => {
       if(value < 0) {
         this.gainStack(Number(key), Number(stack));
@@ -1191,14 +1228,24 @@
     }); 
   };
 
-  // 被HPダメージ時
+  // 与ダメージ・被HPダメージ時
   const _Game_Action_executeHpDamage = Game_Action.prototype.executeHpDamage;
   Game_Action.prototype.executeHpDamage = function(target, value) {
     _Game_Action_executeHpDamage.call(this, target, value);
     if(value > 0) {
-      const stackStateTraits = target.getStackStateTrait("StackHpDamageReceive");
-      Object.entries(stackStateTraits).forEach(([key, stack]) => {
+      // 被ダメージ
+      const stackStateTraitsReceive = target.getStackStateTrait("StackHpDamageReceive");
+      Object.entries(stackStateTraitsReceive).forEach(([key, stack]) => {
         if(this.isHpDamageOrDrain()) {
+          target.gainStack(Number(key), Number(stack));
+        }
+      });
+
+      //与ダメージ
+      const stackStateTraitsAttack = this.subject().getStackStateTrait("StackHpDamageAttack");      
+      Object.entries(stackStateTraitsAttack).forEach(([key, stack]) => {
+        if(this.isHpDamageOrDrain()) {
+          console.log(stack);
           target.gainStack(Number(key), Number(stack));
         }
       });
