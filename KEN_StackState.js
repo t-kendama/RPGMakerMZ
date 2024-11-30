@@ -8,6 +8,8 @@
 ----------------------------------------------------------------------------
  Version
  1.0.1 2024/11/30 与ダメージ時にスタックを上昇させる機能追加
+                  与ダメージ・被ダメージのスタック上昇条件に属性IDを指定する機能追加
+                  ステート付与時のスタック上昇機能追加
                   ステート解除条件に「戦闘終了時に解除」にチェックを入れるとステート自動付与が行われなかった不具合修正
  1.0.0 2024/11/28 初版
 ----------------------------------------------------------------------------
@@ -99,19 +101,25 @@
  * 特定の条件下でスタックを増減させたい時の設定です。
  * この効果を持つバトラーが条件を満たした時、スタック数が増減します。
  * 
- * <StackHpDamageAttack[ステートID]:スタック増減値>
+ * <StackHpDamageAttack[ステートID]:スタック増減値, 属性ID（省略可）>
  * 記述欄：武器・防具・ステート
  * HPダメージを与えた時、攻撃対象のスタックが増減します。
+ * 属性IDを指定すると、その属性IDを使用した時のみスタックが増減します。
  * ダメージが0の場合、効果は発動しません。
  * 
- * <StackHpDamageReceive[ステートID]:スタック増減値>
+ * <StackHpDamageReceive[ステートID]:スタック増減値, 属性ID（省略可）>
  * 記述欄：武器・防具・ステート
- * HPダメージを受けた時、スタックが増減します。
+ * HPダメージを受けた時、攻撃を受けた対象のスタックが増減します。
  * ダメージが0の場合、効果は発動しません。
  * 
- * <StackMpDamageReceive[ステートID]:スタック増減値>
+ * <StackMpDamageAttack[ステートID]:スタック増減値, 属性ID（省略可）>
  * 記述欄：武器・防具・ステート
- * MPダメージを受けた時、スタックが増減します。
+ * MPダメージを与えた時、攻撃対象のスタックが増減します。
+ * ダメージが0の場合、効果は発動しません。
+ * 
+ * <StackMpDamageReceive[ステートID]:スタック増減値, 属性ID（省略可）>
+ * 記述欄：武器・防具・ステート
+ * MPダメージを受けた時、攻撃を受けた対象のスタックが増減します。
  * ダメージが0の場合、効果は発動しません。
  * 
  * <StackHpLoss[ステートID]:スタック増減値>
@@ -137,6 +145,12 @@
  * <StackTpGain[ステートID]:スタック増減値>
  * 記述欄：武器・防具・ステート
  * TP増加時スタックが増減します。
+ * 
+ * <StackStateApply[ステートID]:スタック増減値, ステートID(省略可)>
+ * 記述欄：武器・防具・ステート
+ * ステートを付与した時、攻撃対象のスタックが増減します。
+ * ステートIDを指定した場合、設定したステートIDが付与された時に
+ * スタックが増減します。
  * 
  * <StackCritical[ステートID]:スタック増減値>
  * 記述欄：武器・防具・ステート
@@ -1082,31 +1096,37 @@
     const regex = new RegExp("^" + escapedTrait + "(\\d+)$");
     let traits = {};
 
-    // アクターの場合は装備からも取得
-    if(this.isActor()){
-      for(const item of this.equips()) {
-        if(!item) continue;
-        Object.entries(item.meta).forEach(([key, value]) => {
-          const match = key.match(regex); // 正規表現でキーをチェック
-          if (match) {
-            const stateId = parseInt(match[1], 10); // 整数値を取得
-            const gainValue = parseInt(value, 10) != 0 ? parseInt(value, 10) : 1; // 値なしの場合1を代入
-            traits[stateId] = (traits[stateId] || 0) + gainValue;
-          }
-        }); 
-      }
-    }
-    for(const state of this.states()) {
-      Object.entries($dataStates[state.id].meta).forEach(([key, value]) => {
-        const match = key.match(regex); // 正規表現でキーをチェック
-        if (match) {
-          const stateId = parseInt(match[1], 10); // 整数値を取得
-          const gainValue = parseInt(value, 10) != 0 ? parseInt(value, 10) : 1; // 値なしの場合1を代入
-          traits[stateId] = (traits[stateId] || 0) + gainValue;          
+    // 装備の処理
+    if (this.isActor()) {
+        for (const item of this.equips()) {
+            if (!item) continue;
+            Object.entries(item.meta).forEach(([key, value]) => {
+                const match = key.match(regex);
+                if (match) {
+                    const stateId = parseInt(match[1], 10); // ステートIDを取得
+                    // カンマで区切られた値を配列として格納
+                    const values = value.split(",").map(v => parseInt(v.trim(), 10) || 0);
+                    traits[stateId] = traits[stateId] || []; // 配列を初期化
+                    traits[stateId].push(...values); // 配列に値を追加
+                }
+            });
         }
-      }); 
     }
-    
+
+    // ステートの処理
+    for (const state of this.states()) {
+        Object.entries($dataStates[state.id].meta).forEach(([key, value]) => {
+            const match = key.match(regex);
+            if (match) {
+                const stateId = parseInt(match[1], 10); // ステートIDを取得
+                // カンマで区切られた値を配列として格納
+                const values = value.split(",").map(v => parseInt(v.trim(), 10) || 0);
+                traits[stateId] = traits[stateId] || []; // 配列を初期化
+                traits[stateId].push(...values); // 配列に値を追加
+            }
+        });
+    }
+
     return traits;
   };
 
@@ -1193,6 +1213,12 @@
   //-----------------------------------------------------------------------------
   // Game_Action
   //-----------------------------------------------------------------------------
+  function getItemElementId(data) {
+    if (!data || !data.damage) return null; // 無効なデータの場合
+    const elementId = data.damage.elementId;
+    return elementId;
+  }
+
   const _Game_Action_applyItemUserEffect = Game_Action.prototype.applyItemUserEffect;
   Game_Action.prototype.applyItemUserEffect = function(target) {
     _Game_Action_applyItemUserEffect.call(this, target);
@@ -1216,55 +1242,132 @@
     });
   };
 
-  // 属性スキル使用時
+  // 自分自身のスタック処理
   Game_Action.prototype.applyStackStateOwn = function(/*target*/) {    
     const battler = this.subject();
     const traits = battler.getStackStateTrait("GainStackOwn");
 
-    // 自分自身のスタック処理
     Object.entries(traits).forEach(([key, value]) => {
       const stateId = Number(key);
       battler.gainStack(stateId, value);
     }); 
   };
 
+  // 属性IDの判定
+  function matchElementId(elementId, requiredElementId) {
+    if (requiredElementId === null || requiredElementId === undefined) {
+        return true; // 属性IDが指定されていない場合は常に一致
+    }
+    return elementId === requiredElementId;
+  }
+
   // 与ダメージ・被HPダメージ時
   const _Game_Action_executeHpDamage = Game_Action.prototype.executeHpDamage;
   Game_Action.prototype.executeHpDamage = function(target, value) {
     _Game_Action_executeHpDamage.call(this, target, value);
-    if(value > 0) {
-      // 被ダメージ
+
+    if (value > 0) {
+      const item = this.item();
+      const elementId = getItemElementId(item); // アイテムの属性IDを取得
+
+      // 被ダメージ時のスタック処理
       const stackStateTraitsReceive = target.getStackStateTrait("StackHpDamageReceive");
-      Object.entries(stackStateTraitsReceive).forEach(([key, stack]) => {
-        if(this.isHpDamageOrDrain()) {
-          target.gainStack(Number(key), Number(stack));
+      Object.entries(stackStateTraitsReceive).forEach(([stateId, stackDataArray]) => {
+        const stackValue = stackDataArray[0]; // スタック増加値
+        const requiredElementId = stackDataArray.length > 1 ? stackDataArray[1] : null; // 属性ID (省略可能)
+
+        if (this.isHpDamageOrDrain() && matchElementId(elementId, requiredElementId)) {
+          target.gainStack(Number(stateId), Number(stackValue));
         }
       });
 
-      //与ダメージ
-      const stackStateTraitsAttack = this.subject().getStackStateTrait("StackHpDamageAttack");      
-      Object.entries(stackStateTraitsAttack).forEach(([key, stack]) => {
-        if(this.isHpDamageOrDrain()) {
-          console.log(stack);
-          target.gainStack(Number(key), Number(stack));
+      // 与ダメージ時のスタック処理
+      const stackStateTraitsAttack = this.subject().getStackStateTrait("StackHpDamageAttack");
+      Object.entries(stackStateTraitsAttack).forEach(([stateId, stackDataArray]) => {
+        const stackValue = stackDataArray[0]; // スタック増加値
+        const requiredElementId = stackDataArray.length > 1 ? stackDataArray[1] : null; // 属性ID (省略可能)
+
+        if (this.isHpDamageOrDrain() && matchElementId(elementId, requiredElementId)) {
+          target.gainStack(Number(stateId), Number(stackValue));
         }
       });
-    }    
+    }
   };
 
   // 被MPダメージ時
   const _Game_Action_executeMpDamage = Game_Action.prototype.executeMpDamage;
   Game_Action.prototype.executeMpDamage = function(target, value) {
     _Game_Action_executeMpDamage.call(this, target, value);
-
+    
     if(value > 0) {
-      const stackStateTraits = target.getStackStateTrait("StackMpDamageReceive");
-      Object.entries(stackStateTraits).forEach(([key, stack]) => {
-        if(this.isMpDamageOrDrain()) {
-          target.gainStack(Number(key), Number(stack));
-        }      
-      });  
+      // 被ダメージ時のスタック処理
+      const stackStateTraitsReceive = target.getStackStateTrait("StackMpDamageReceive");
+      Object.entries(stackStateTraitsReceive).forEach(([stateId, stackDataArray]) => {
+        const stackValue = stackDataArray[0]; // スタック増加値
+        const requiredElementId = stackDataArray.length > 1 ? stackDataArray[1] : null; // 属性ID (省略可能)
+
+        if (this.isMpDamageOrDrain() && matchElementId(elementId, requiredElementId)) {
+          target.gainStack(Number(stateId), Number(stackValue));
+        }
+      });
+
+      // 与ダメージ時のスタック処理
+      const stackStateTraitsAttack = this.subject().getStackStateTrait("StackMpDamageAttack");
+      Object.entries(stackStateTraitsAttack).forEach(([stateId, stackDataArray]) => {
+        const stackValue = stackDataArray[0]; // スタック増加値
+        const requiredElementId = stackDataArray.length > 1 ? stackDataArray[1] : null; // 属性ID (省略可能)
+
+        if (this.isMpDamageOrDrain() && matchElementId(elementId, requiredElementId)) {
+          target.gainStack(Number(stateId), Number(stackValue));
+        }
+      });
     }
+  };
+
+  // ステート付与時
+  const _Game_Action_itemEffectAddState = Game_Action.prototype.itemEffectAddState;
+  Game_Action.prototype.itemEffectAddState = function(target, effect) {
+    const beforeAddedStates = [...target.result().addedStates]; // 付与前のステート
+    _Game_Action_itemEffectAddState.call(this, target, effect); // 元の処理を実行
+    const newlyAddedStates = target.result().addedStates.filter(
+      stateId => !beforeAddedStates.includes(stateId)
+    );
+    if (isItemEffectStateMatched(this.subject(), newlyAddedStates, effect)) {
+      this.itemEffectAddStackWithState(target, effect);
+    }
+  };
+
+  //
+  function isItemEffectStateMatched(subject, newlyAddedStates, effect) {
+    if(effect.dataId == 0) {
+      const targetArray = subject.attackStates();
+      return newlyAddedStates.some(state => targetArray.includes(state));
+    }
+    return newlyAddedStates.includes(effect.dataId);
+  }
+
+  // ステートIDの判定
+  function matchStateId(subject, requiredStateId, effect) {
+    if (requiredStateId === null || requiredStateId === undefined) {
+      return true;
+    }
+    if(effect.dataId == 0) {
+      const targetArray = subject.attackStates();
+      return targetArray.includes(requiredStateId);
+    }
+    return effect.dataId == requiredStateId;
+  }
+
+  Game_Action.prototype.itemEffectAddStackWithState = function(target, effect){
+    const stackStateTraits = this.subject().getStackStateTrait("StackStateApply");
+    Object.entries(stackStateTraits).forEach(([gainStateId, stackDataArray]) => {
+      const stackValue = stackDataArray[0]; // スタック増加値
+      const requiredStateId = stackDataArray.length > 1 ? stackDataArray[1] : null; // ステートID (省略可能)
+
+      if (matchStateId(this.subject(), requiredStateId, effect)) {
+        target.gainStack(Number(gainStateId), Number(stackValue));
+      }
+    });
   };
 
   // 会心時
