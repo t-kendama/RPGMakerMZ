@@ -1,12 +1,14 @@
 /*
 ----------------------------------------------------------------------------
- KEN_StackState v1.0.1
+ KEN_StackState v1.0.2
 ----------------------------------------------------------------------------
  (C)2024 KEN
  This software is released under the MIT License.
  http://opensource.org/licenses/mit-license.php
 ----------------------------------------------------------------------------
  Version
+ 1.0.2 2024/11/30 ステート自動付与がONのとき、ステート付与処理が必ず行われていた不具合修正
+                  通常攻撃属性のステート付与に対応
  1.0.1 2024/11/30 与ダメージ時にスタックを上昇させる機能追加
                   与ダメージ・被ダメージのスタック上昇条件に属性IDを指定する機能追加
                   ステート付与時のスタック上昇機能追加
@@ -18,7 +20,7 @@
  * @target MZ
  * @plugindesc 累積ステートプラグイン
  * @author KEN
- * @version 1.0.1
+ * @version 1.0.2
  * @url https://github.com/t-kendama/RPGMakerMZ/edit/master/KEN_StackState.js
  * 
  * @help
@@ -807,7 +809,7 @@
 
   // ステートが付与されていない状態でスタックが増加した時、ステート自動付与
   Game_BattlerBase.prototype.autoAddStateWithStack = function(stateId, value) {
-    if(StackStateConfig.autoStateAdd(stateId) && this.isStateBattleOnly(stateId) && value > 0) {      
+    if(StackStateConfig.autoStateAdd(stateId) && !this.isStateAffected(stateId) && this.isStateBattleOnly(stateId) && value > 0) {      
       this.addState(stateId);
     }
   };
@@ -1213,10 +1215,13 @@
   //-----------------------------------------------------------------------------
   // Game_Action
   //-----------------------------------------------------------------------------
-  function getItemElementId(data) {
+  function getItemElements(subject, data) {
     if (!data || !data.damage) return null; // 無効なデータの場合
     const elementId = data.damage.elementId;
-    return elementId;
+    if(elementId == -1) {
+      return subject.attackElements();
+    }
+    return [elementId];
   }
 
   const _Game_Action_applyItemUserEffect = Game_Action.prototype.applyItemUserEffect;
@@ -1254,11 +1259,11 @@
   };
 
   // 属性IDの判定
-  function matchElementId(elementId, requiredElementId) {
+  function matchElementId(elements, requiredElementId) {
     if (requiredElementId === null || requiredElementId === undefined) {
-        return true; // 属性IDが指定されていない場合は常に一致
+      return true; // 属性IDが指定されていない場合は常に一致
     }
-    return elementId === requiredElementId;
+    return elements.includes(requiredElementId);
   }
 
   // 与ダメージ・被HPダメージ時
@@ -1268,7 +1273,8 @@
 
     if (value > 0) {
       const item = this.item();
-      const elementId = getItemElementId(item); // アイテムの属性IDを取得
+      const elements = getItemElements(this.subject(), item); // アイテムの属性IDを取得
+      console.log(elements)
 
       // 被ダメージ時のスタック処理
       const stackStateTraitsReceive = target.getStackStateTrait("StackHpDamageReceive");
@@ -1276,7 +1282,7 @@
         const stackValue = stackDataArray[0]; // スタック増加値
         const requiredElementId = stackDataArray.length > 1 ? stackDataArray[1] : null; // 属性ID (省略可能)
 
-        if (this.isHpDamageOrDrain() && matchElementId(elementId, requiredElementId)) {
+        if (this.isHpDamageOrDrain() && matchElementId(elements, requiredElementId)) {
           target.gainStack(Number(stateId), Number(stackValue));
         }
       });
@@ -1287,7 +1293,7 @@
         const stackValue = stackDataArray[0]; // スタック増加値
         const requiredElementId = stackDataArray.length > 1 ? stackDataArray[1] : null; // 属性ID (省略可能)
 
-        if (this.isHpDamageOrDrain() && matchElementId(elementId, requiredElementId)) {
+        if (this.isHpDamageOrDrain() && matchElementId(elements, requiredElementId)) {
           target.gainStack(Number(stateId), Number(stackValue));
         }
       });
