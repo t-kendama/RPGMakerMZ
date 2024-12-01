@@ -15,7 +15,7 @@
  * @plugindesc パーティメンバーHPを消費するスキル
  * @author KEN
  * @version 1.0.0
- * @url 
+ * @url https://github.com/t-kendama/RPGMakerMZ/blob/master/KEN_PartyHpCostSkill.js
  * 
  * @help
  *
@@ -35,7 +35,7 @@
  * スキル使用時、パーティのHPを消費します。
  * 例．
  * <PartyCostHp:30>
- * スキル使用時、パーティのHPが30消費します。
+ * スキル使用時、パーティ全員のHPを30消費します。
  *  
  * <PartyCostHpRate:[消費HP割合（単位%）]>
  * 記述欄：スキル
@@ -45,7 +45,7 @@
  * 
  * 例．
  * <PartyCostHpRate:10>
- * スキル使用時、パーティ全員のHPを最大HPの10％を消費します。
+ * スキル使用時、パーティ全員のHPを最大HPの10％消費します。
  * 
  */
 
@@ -119,6 +119,5 @@
     this.partyHpCostMemberNum = 0;  // HPコストの合計人数
     this.partyHpCostSum = 0;        // パーティHPコストで消費したHP合計
   };
-
   
 })();
