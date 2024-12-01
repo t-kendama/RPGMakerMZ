@@ -10,6 +10,7 @@ RPGツクールMZ用のプラグインです。
 | KEN_CustomizeGauge.js| アクターごとのパラメータ描画をカスタマイズ| [DL](https://github.com/t-kendama/RPGMakerMZ/blob/master/KEN_CustomizeGauge.js) |
 | KEN_ExtraDamagePlus.js| 追加ダメージプラグイン | [DL](https://github.com/t-kendama/RPGMakerMZ/blob/master/KEN_ExtraDamagePlus.js) |
 | KEN_StackState.js | 累積ステートプラグイン | [DL](https://github.com/t-kendama/RPGMakerMZ/blob/master/KEN_StackState.js) |
+| KEN_PartyHpCostSkill.js | パーティメンバーHPを消費するスキル | [DL](https://github.com/t-kendama/RPGMakerMZ/blob/master/KEN_PartyHpCostSkill.js) |
 
 ## プラグイン説明
 
@@ -117,6 +118,16 @@ RPGツクールMZ用のプラグインです。
 
 このように回避した時だけスタック数を減るようにすることで、「１回だけ回避できるステート」を作ることも出来ます。  
 ![StackState002](https://github.com/t-kendama/RPGMakerMZ/blob/master/images/StackState_ex05.png)
+
+### KEN_PartyHpCostSkill.js
+
+[ダウンロード](https://github.com/t-kendama/RPGMakerMZ/blob/master/KEN_PartyHpCostSkill.js) 
+
+* 概要  
+パーティメンバーのHPを消費するスキルを実装します。  
+消費HPは実数・割合で指定可能です。
+
+一風変わったスキルを実装したい方にどうぞ。
 
 
 ## 規約
