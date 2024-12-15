@@ -1,12 +1,14 @@
 /*
 ----------------------------------------------------------------------------
- KEN_DamageCutState v1.0.1
+ KEN_DamageCutState v1.0.2
 ----------------------------------------------------------------------------
  (C)2024 KEN
  This software is released under the MIT License.
  http://opensource.org/licenses/mit-license.php
 ----------------------------------------------------------------------------
  Version
+ 1.0.2 2024/12/15 プラグインコマンド対応
+                  戦闘不能者にシールドが付与されてしまう不具合修正
  1.0.1 2024/11/26 HP再生率のポップパップ表記が0になってしまう不具合修正
                   タグ表記方法が大文字と小文字が混在していたため統一
  1.0.0 2024/10/28 シールド減少時のポップアップ処理追加
@@ -25,7 +27,7 @@
  * @target MZ
  * @plugindesc ダメージカットを行うシールドを提供します
  * @author KEN
- * @version 1.0.1
+ * @version 1.0.2
  * @url https://github.com/t-kendama/RPGMakerMZ/blob/main/KEN_DamageCutShield.js
  * 
  * @help
@@ -39,15 +41,17 @@
  * ダメージを受けます。
  * 例．ダメージが100、シールド30の場合、70ダメージを受けます。
  * 
- * シールドはダメージを受けない限り解除されませんが、後述のステート設定で
- * 持続ターン数を設定できます。
+ * シールドはダメージを受けない限り解除されません。
+ * ただし、後述のステート設定で持続ターン数を設定できます。
  * 
  * 【細かい仕様】
- * ・イベントコマンドの「HPの増減」でHPを減らした場合は、シールドの耐久値に
- * 関わらず処理が実行されます。
+ * ・イベントコマンドの「HPの増減」でHPを減らした場合、シールドの耐久値に
+ * 関わらずHP減少処理が実行されます。
+ * 
+ * ・イベントコマンドの「全回復」を使用した場合、シールド状態は解除されます。
  * 
  * 【シールドの描画】
- * シールドはHPゲージの上に描画します。
+ * シールドをHPゲージ上に描画します。
  * またシールドが付与されている間、アイコンおよび持続ターン数を描画できます。
  * 
  *    --------------------    使い方    --------------------
@@ -62,7 +66,8 @@
  * 「自動解除のタイミング」を「なし」に設定した場合、シールドは自動解除
  * されなくなります。
  * 
- * 【シールドの付与】
+ *
+ * 【シールドの付与方法】
  * アイテムまたはスキル欄のメモ欄に設定します。
  * 
  * <DamageCutShield: 数値 or 数式>
@@ -109,13 +114,13 @@
  * 
  * <DamageCutShieldMax: 数値 or 数式>
  * 記述欄：アクター、エネミー
- * バトラー個別にシールド耐久値の最大値を設定します。
- * <DamageCutShieldMax: a.mhp> と表記するとシールド耐久値がバトラーの最大HPの値に
- * 制限されます。
+ * バトラー個別にシールド耐久値の上限を設定します。
+ * <DamageCutShieldMax: a.mhp> と表記するとシールド耐久値の上限がバトラーの
+ * 最大HPの値に制限されます。
  * 
  * 
  * --------------------    スクリプト    --------------------
- * ・シールド耐久値を取得
+ * ・バトラーのシールド耐久値を取得
  * $gameActors.actor(アクターID).damageCutShield()
  * $gameTroop.members()[エネミーのインデックス].damageCutShield()
  * 
@@ -130,11 +135,102 @@
  * 
  * --------------------    上級者向け設定について    --------------------
  * 本プラグインはエネミーのシールドを描画する機能を持ちません。
- * ※内部的にはシールドは適用されます
+ * ※内部的にシールド効果は適用されます
  * 
  * エネミーのシールドを描画する場合は他プラグインとの併用をご検討ください。
- * シールドの描画に関する細かい挙動については対応しかねます。ご了承ください。
+ * シールドの描画に関する細かい挙動については対応しかねます。
+ * ご了承ください。
  *  
+ * 
+ * 
+ * @command GainDamageCutShieldActor
+ * @text アクターシールドを増減
+ * @desc アクターのシールド値を増減します
+ *
+ * @arg actorId
+ * @text アクターID
+ * @desc シールドを増減するアクターID
+ * @type actor
+ * @default 1
+ * 
+ * @arg value
+ * @text シールド増減値
+ * @desc 増減するシールド値
+ * @type number
+ * @default 0
+ * @max 999999
+ * @min -999999
+ * 
+ * @command GainDamageCutShieldParty
+ * @text パーティのシールドを増減
+ * @desc パーティ全員のシールド値を増減します
+ * 
+ * @arg value
+ * @text シールド増減値
+ * @desc 増減するシールド値
+ * @type number
+ * @default 0
+ * @max 999999
+ * @min -999999
+ * 
+ * @command ClearDamageCutShieldActor
+ * @text アクターシールドを解除
+ * @desc アクターのシールド状態を解除します
+ *
+ * @arg actorId
+ * @text アクターID
+ * @desc シールドを増減するアクターID
+ * @type actor
+ * @default 1
+ * 
+ * @command ClearDamageCutShieldParty
+ * @text パーティのシールドを解除
+ * @desc パーティ全員のシールド状態を解除します
+ * 
+ * 
+ * @command GainDamageCutShieldEnemy
+ * @text エネミーのシールドを増減
+ * @desc エネミーのシールド値を増減します
+ *
+ * @arg enemyIndex
+ * @text エネミーインデックス
+ * @desc シールドを増減するエネミーのインデックス番号
+ * @type number
+ * @default 0
+ * 
+ * @arg value
+ * @text シールド増減値
+ * @desc 増減するシールド値
+ * @type number
+ * @default 0
+ * @max 999999
+ * @min -999999
+ * 
+ * @command GainDamageCutShieldTroop
+ * @text 敵グループのシールドを増減
+ * @desc 敵グループ全員のシールド値を増減します
+ * 
+ * @arg value
+ * @text シールド増減値
+ * @desc 増減するシールド値
+ * @type number
+ * @default 0
+ * @max 999999
+ * @min -999999
+ * 
+ * @command ClearDamageCutShieldEnemy
+ * @text エネミーのシールドを解除
+ * @desc エネミーのシールド状態を解除します
+ *
+ * @arg enemyIndex
+ * @text エネミーインデックス
+ * @desc シールドを解除するエネミーのインデックス番号
+ * @type number
+ * @default 0
+ * 
+ * @command ClearDamageCutShieldTroop
+ * @text 敵グループのシールドを解除
+ * @desc 敵グループ全員のシールド状態を解除します
  * 
  * 
  * @param generalConfig
@@ -489,6 +585,68 @@
   const ENEMY_TurnOffsetX = param.enemyTurnOffsetX || 0;
   const ENEMY_TurnOffsetY = param.enemyTurnOffsetY || 0;
 
+  // ================================================
+  //  Plugin Command
+  // ================================================
+  PluginManager.registerCommand(PLUGIN_NAME, 'GainDamageCutShieldActor', args => {
+    if (args.actorId > 0) {
+      const value = Number(args.value);
+      $gameActors.actor(args.actorId).gainDamageCutShield(value);
+    }
+  });
+
+  PluginManager.registerCommand(PLUGIN_NAME, 'GainDamageCutShieldParty', args => {
+    for(const actor of $gameParty.aliveMembers()) {
+      const value = Number(args.value);
+      actor.gainDamageCutShield(value);
+    }
+  });
+
+  PluginManager.registerCommand(PLUGIN_NAME, 'ClearDamageCutShieldActor', args => {
+    if (args.actorId > 0) {
+      $gameActors.actor(args.actorId).clearDamageCutShield();
+    }
+  });
+
+  PluginManager.registerCommand(PLUGIN_NAME, 'ClearDamageCutShieldParty', args => {
+    for(const actor of $gameParty.aliveMembers()) {
+      actor.clearDamageCutShield();
+    }
+  });
+
+  PluginManager.registerCommand(PLUGIN_NAME, 'GainDamageCutShieldEnemy', args => {
+    if (args.enemyIndex > 0) {
+      const enemy = $gameTroop.members()[args.enemyIndex];
+      const value = Number(args.value);
+      if(enemy) {
+        enemy.gainDamageCutShield(value);
+      }
+    }
+  });
+
+  PluginManager.registerCommand(PLUGIN_NAME, 'GainDamageCutShieldTroop', args => {
+    for(const enemy of $gameTroop.aliveMembers()) {
+      const value = Number(args.value);
+      enemy.gainDamageCutShield(value);
+    }
+  });
+
+  PluginManager.registerCommand(PLUGIN_NAME, 'ClearDamageCutShieldEnemy', args => {
+    if (args.enemyIndex > 0) {
+      const enemy = $gameTroop.members()[args.enemyIndex];
+      if(enemy) {
+        enemy.clearDamageCutShield();
+      }
+    }
+  });
+
+  PluginManager.registerCommand(PLUGIN_NAME, 'ClearDamageCutShieldTroop', args => {
+    for(const enemy of $gameTroop.aliveMembers()) {
+      enemy.clearDamageCutShield();
+    }
+  });
+
+
   //====================================================================
   // ●Window_BattleLog
   //====================================================================
@@ -600,16 +758,17 @@
   // シールド値を増加
   Game_BattlerBase.prototype.gainDamageCutShield = function(value) {
     const origin = this._damageCutShield;
-    this._damageCutShield += value;
-    this._damageCutShield = this.clampMaxShieldValue(this._damageCutShield);
-    this._damageCutShield = Math.max(this._damageCutShield, 0);   
-    if(value > 0) {
-      this.addDamageCutShieldState();
+    if( this.isAlive() ) {
+      this._damageCutShield += value;
+      this._damageCutShield = this.clampMaxShieldValue(this._damageCutShield);
+      this._damageCutShield = Math.max(this._damageCutShield, 0);   
+      if(value > 0) {
+        this.addDamageCutShieldState();
+      }
+      if(this._damageCutShield <= 0) {
+        this.eraseState(STATEID_Shield);
+      }
     }
-    if(this._damageCutShield <= 0) {
-      this.eraseState(STATEID_Shield);
-    }
-
     return this._damageCutShield - origin;
   };
 
