@@ -86,7 +86,7 @@
  * @param TermSpacing
  * @type number
  * @text 用語間スペース
- * @desc 用語と説明の間の縦方向スペース（ピクセル単位）
+ * @desc 用語が複数ある時のスペース（縦方向）を設定します。
  * @default 10
  * 
  * @param TermColor
