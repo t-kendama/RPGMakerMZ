@@ -1,70 +1,82 @@
 /*
 ----------------------------------------------------------------------------
- KEN_TermHelpWindow v0.9.0
+ KEN_TermHelpWindow v1.0.0
 ----------------------------------------------------------------------------
  (C)2024 KEN
  This software is released under the MIT License.
  http://opensource.org/licenses/mit-license.php
 ----------------------------------------------------------------------------
  Version
- 0.9.0 2024/12/29 仮登録
+ 1.0.0 2025/01/01 仮登録
 ----------------------------------------------------------------------------
 */
 /*:
  * @target MZ
  * @plugindesc 用語ヘルプウィンドウプラグイン
  * @author KEN
+ * @version 1.0.0
+ * @url https://github.com/t-kendama/RPGMakerMZ/edit/master/KEN_TermHelpWindow.js
  * 
  * @help
  * 
  * -------------------------    概要    -------------------------
- * ヘルプウィンドウに加えて追加のヘルプウィンドウを表示する機能を提供します。
+ * 用語の説明を行うヘルプウィンドウ機能を提供します。
+ * ヘルプウィンドウ中の文字列から用語を検出し、用語の説明を
+ * 追加のヘルプウィンドウで表示できるようになります。
  * 
- * ヘルプウィンドウ中の文字列から用語を検出し、用語が存在する場合は
- * 追加のヘルプウィンドウが表示されるようになります。
- * 
- * ヘルプウィンドウの表示方法はシーン個別で設定する必要があります。
+ * 追加ウィンドウの大きさは文字数により自動的に決まります。
  * 
  * -------------------------    使い方    -------------------------
  * 本プラグインはプラグインパラメータ上で設定します。
- * 
+ *
+ * 【プラグインパラメータ補足説明】
  * ・用語リスト
- * 用語の説明を登録します。
+ * 用語および用語の説明を登録します。
+ * この項目に登録された文字列がヘルプウィンドウ中に表示されると
+ * 用語ヘルプウィンドウが表示できるようになります。
  * 
+ * ・シーン設定
+ * 用語ウィンドウを表示するシーンを設定します。
+ * デフォルト設定でもそのまま使用できますが、自作シーンで使用したい時は
+ * シーン名を直接入力してください。
  * 
  *
  * @param Terms
  * @type struct<Term>[]
  * @text 用語リスト
- * @desc ヘルプウィンドウで検出する用語とその説明を登録します
+ * @desc ヘルプウィンドウで検出する用語と説明文を登録します。
  *
  * @param SceneSettings
  * @type struct<SceneSetting>[]
  * @text シーン設定
- * @desc 用語ウィンドウの表示シーンを設定します
+ * @desc 用語ウィンドウの表示シーンを設定します。
+ * @default ["{\"SceneName\":\"Scene_Item\",\"Alignment\":\"0\"}","{\"SceneName\":\"Scene_Equip\",\"Alignment\":\"0\"}","{\"SceneName\":\"Scene_Skill\",\"Alignment\":\"0\"}","{\"SceneName\":\"Scene_Battle\",\"Alignment\":\"1\"}","{\"SceneName\":\"Scene_Shop\",\"Alignment\":\"0\"}"]
  * 
  * @param DefaultKey
- * @type string
+ * @type combo
  * @text 表示切替キー
  * @desc 用語ヘルプウィンドウの表示切替キー（デフォルト：shift）
  * @default shift
+ * @option shift
+ * @option control
+ * @option tab
  * 
  * @param DisplayText
  * @type string
  * @text 用語ヘルプテキスト
- * @desc 用語ヘルプが表示できることを示す文章 ヘルプウィンドウの右下に表示されます
+ * @desc 用語ヘルプが表示できることを示す文章。ヘルプウィンドウの右下に表示されます。
  * @default Shift: 用語表示
  *
  * @param TermFontSize
  * @type number
  * @text 用語フォントサイズ
- * @desc 用語名のフォントサイズを設定します
+ * @desc 用語名のフォントサイズを設定します。
  * @default 20
  *
  * @param DescriptionFontSize
  * @type number
  * @text 説明フォントサイズ
- * @desc 用語説明のフォントサイズを設定します
+ * @desc 用語説明のフォントサイズを設定します。
  * @default 16
  *
  * @param TermSpacing
@@ -75,8 +87,8 @@
  * 
  * @param TermColor
  * @type color
- * @text 用語色
- * @desc 用語を表示する時の色
+ * @text 用語カラー
+ * @desc 用語を表示する時の色を設定します。
  * @default 6
  */
 
@@ -96,27 +108,12 @@
  * @param SceneName
  * @type combo
  * @text シーン名
- * @desc 対象となるシーン名。オリジナルシーンの場合は手動で記述ください。
+ * @desc 対象となるシーン名。自作シーンの場合は手動で記述ください。
  * @option Scene_Item
- * @value Scene_Item
  * @option Scene_Equip
- * @value Scene_Equip
  * @option Scene_Skill
- * @value Scene_Skill
  * @option Scene_Battle
- * @value Scene_Battle
- *
- * @param Width
- * @type number
- * @text 幅の最大値
- * @desc 用語ウィンドウの幅最大値。
- * @default 600
- *
- * @param Height
- * @type number
- * @text 高さの最大値
- * @desc 用語ウィンドウの高さ最大値。
- * @default 400
+ * @option Scene_Shop
  *
  * @param Alignment
  * @type select
@@ -132,6 +129,12 @@
  * @value 3
  * @default 0
  * 
+ * @param AutoDisplay
+ * @type boolean
+ * @text ウィンドウ自動表示
+ * @desc 用語ヘルプウィンドウを自動で表示します。
+ * @default false
+ * 
  */
 
 (() => {
@@ -143,24 +146,24 @@
         return ParsedTerm;
     });
     const SceneSettings = JSON.parse(Parameters["SceneSettings"] || "[]").map(setting => JSON.parse(setting));
-    const DefaultKey = Parameters["DefaultKey"] || "shift";
+    const TermHelpKey = Parameters["DefaultKey"] || "shift";
     const TermFontSize = Number(Parameters["TermFontSize"] || 20);
     const DescriptionFontSize = Number(Parameters["DescriptionFontSize"] || 16);
     const TermSpacing = Number(Parameters["TermSpacing"] || 10);
     const TermColor = Parameters["TermColor"] || 0;
     const DisplayText = Parameters["DisplayText"] || "";
 
+
     //====================================================================
     // TermHelpWindow
     //====================================================================
-
-    class TermHelpWindow extends Window_Help {
+    class Window_TermHelp extends Window_Help {
         initialize(rect) {
             Window_Base.prototype.initialize.call(this, rect);
             this._text = "";
-            this.clear();
-            this.hide(); // 初期状態で非表示にする
+            this.clear();            
             this._visibleToggle = false; // 表示ON/OFF用フラグ
+            this.hide(); // 初期状態で非表示にする
         }
 
         resetFontSettings() {
@@ -169,7 +172,7 @@
         }
 
         lineHeight() {
-            return Math.ceil(this.contents.fontSize * 1.2); // フォントサイズに基づく自動調整
+            return Math.ceil(this.contents.fontSize * 1.2);
         }
 
         toggleVisibility() {
@@ -231,6 +234,7 @@
             });
         }
 
+        // ウィンドウサイズ計算
         calcAutoRect(terms) {
             if (!terms || terms.length === 0) {
                 return new Rectangle(0, 0, 200, 100); // デフォルトサイズ
@@ -267,6 +271,13 @@
     //====================================================================
     // Window_Help
     //====================================================================
+    const _Window_Help_hide = Window_Help.prototype.hide;
+    Window_Help.prototype.hide = function() {
+        _Window_Help_hide.call(this);
+        if(this._extraHelpWindow) {
+            this._extraHelpWindow.hide();
+        }
+    };
 
     Window_Help.prototype.processTerms = function(text) {
         let matchedTerms = [];
@@ -296,7 +307,7 @@
                 this._extraHelpWindow.clear();
                 this._extraHelpWindow.hide();
             }
-            this.refreshDisplayHelpText();
+            this.refreshTermHelpText();
         }
     };
 
@@ -318,12 +329,19 @@
         const Setting = SceneSettings.find(s => s.SceneName === sceneName);
         if (!Setting) return; // 設定がない場合は処理を中断
 
-        const ExtraHelpWindow = new TermHelpWindow(new Rectangle(0, 0, 200, 100));
+        const ExtraHelpWindow = new Window_TermHelp(new Rectangle(0, 0, 200, 100));
         this._extraHelpWindow = ExtraHelpWindow;
         this.parent.addChildAt(ExtraHelpWindow, this.parent.children.length); // 常に最上位に追加
     };
 
-    Window_Help.prototype.refreshDisplayHelpText = function() {
+    Window_Help.prototype.isAutoDisplay = function(sceneName) {
+        const Setting = SceneSettings.find(s => s.SceneName === sceneName);
+        if (!Setting) return false;
+
+        return Setting.AutoDisplay;
+    };
+
+    Window_Help.prototype.refreshTermHelpText = function() {
         if (this.hasTermText()) {
             const text = DisplayText;
             const fontSize = 18;
@@ -345,6 +363,20 @@
     };
 
     //====================================================================
+    // Window_Selectable
+    //====================================================================
+
+    const _Window_Selectable_update = Window_Selectable.prototype.update;
+    Window_Selectable.prototype.update = function() {
+        _Window_Selectable_update.call(this);
+        if (this.active && Input.isTriggered(TermHelpKey)) {
+            if (this._helpWindow && this._helpWindow._extraHelpWindow) {
+                this._helpWindow._extraHelpWindow.toggleVisibility();
+            }
+        }
+    };
+
+    //====================================================================
     // Scene_Base
     //====================================================================
 
@@ -357,13 +389,4 @@
         }
     };
 
-    const _Window_Selectable_update = Window_Selectable.prototype.update;
-    Window_Selectable.prototype.update = function() {
-        _Window_Selectable_update.call(this);
-        if (this.active && Input.isTriggered(DefaultKey)) {
-            if (this._helpWindow && this._helpWindow._extraHelpWindow) {
-                this._helpWindow._extraHelpWindow.toggleVisibility();
-            }
-        }
-    };
 })();
