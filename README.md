@@ -14,6 +14,7 @@
 | KEN_ExtraDamagePlus.js | 追加ダメージプラグイン | [DL](https://github.com/t-kendama/RPGMakerMZ/blob/master/KEN_ExtraDamagePlus.js) |
 | KEN_StackState.js | 累積ステートプラグイン | [DL](https://github.com/t-kendama/RPGMakerMZ/blob/master/KEN_StackState.js) |
 | KEN_PartyHpCostSkill.js | パーティメンバーHPを消費するスキル | [DL](https://github.com/t-kendama/RPGMakerMZ/blob/master/KEN_PartyHpCostSkill.js) |
+| KEN_TermHelpWindow.js | 用語ヘルプウィンドウ | [DL](https://github.com/t-kendama/RPGMakerMZ/blob/master/KEN_TermHelpWindow.js) |
 
 ## プラグイン説明
 
@@ -132,6 +133,15 @@
 
 一風変わったスキルを実装したい方にどうぞ。
 
+### KEN_TermHelpWindow.js
+
+[ダウンロード](https://github.com/t-kendama/RPGMakerMZ/blob/master/KEN_TermHelpWindow.js) 
+
+* 概要  
+用語の説明を行うヘルプウィンドウ機能を提供します。  
+ヘルプウィンドウ中の文字列から用語を検出し、用語の説明を追加のヘルプウィンドウで表示できるようになります。
+
+![TermHelp01](https://github.com/t-kendama/RPGMakerMZ/blob/master/images/KEN_TermHelpWindow01.png)
 
 ## 規約
 [MITライセンス](https://github.com/t-kendama/RPGMakerMZ/blob/main/LICENSE)に準拠します。
