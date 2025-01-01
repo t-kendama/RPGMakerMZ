@@ -56,10 +56,10 @@
  * @desc 用語ウィンドウの表示シーンを設定します。
  * @default ["{\"SceneName\":\"Scene_Item\",\"Alignment\":\"0\"}","{\"SceneName\":\"Scene_Equip\",\"Alignment\":\"0\"}","{\"SceneName\":\"Scene_Skill\",\"Alignment\":\"0\"}","{\"SceneName\":\"Scene_Battle\",\"Alignment\":\"1\"}","{\"SceneName\":\"Scene_Shop\",\"Alignment\":\"0\"}"]
  * 
- * @param DefaultKey
+ * @param KeySymbol
  * @type combo
  * @text 表示切替キー
- * @desc 用語ヘルプウィンドウの表示切替キー（デフォルト：shift）
+ * @desc 用語ヘルプウィンドウの表示切替キー
  * @default shift
  * @option shift
  * @option control
@@ -133,12 +133,6 @@
  * @value 3
  * @default 0
  * 
- * @param AutoDisplay
- * @type boolean
- * @text ウィンドウ自動表示
- * @desc 用語ヘルプウィンドウを自動で表示します。
- * @default false
- * 
  */
 
 (() => {
@@ -150,7 +144,7 @@
         return ParsedTerm;
     });
     const SceneSettings = JSON.parse(Parameters["SceneSettings"] || "[]").map(setting => JSON.parse(setting));
-    const TermHelpKey = Parameters["DefaultKey"] || "shift";
+    const KeySymbol = Parameters["KeySymbol"] || "shift";
     const TermFontSize = Number(Parameters["TermFontSize"] || 20);
     const DescriptionFontSize = Number(Parameters["DescriptionFontSize"] || 16);
     const TermSpacing = Number(Parameters["TermSpacing"] || 10);
@@ -338,13 +332,6 @@
         this.parent.addChildAt(ExtraHelpWindow, this.parent.children.length); // 常に最上位に追加
     };
 
-    Window_Help.prototype.isAutoDisplay = function(sceneName) {
-        const Setting = SceneSettings.find(s => s.SceneName === sceneName);
-        if (!Setting) return false;
-
-        return Setting.AutoDisplay;
-    };
-
     Window_Help.prototype.refreshTermHelpText = function() {
         if (this.hasTermText()) {
             const text = DisplayText;
@@ -373,7 +360,7 @@
     const _Window_Selectable_update = Window_Selectable.prototype.update;
     Window_Selectable.prototype.update = function() {
         _Window_Selectable_update.call(this);
-        if (this.active && Input.isTriggered(TermHelpKey)) {
+        if (this.active && Input.isTriggered(KeySymbol)) {
             if (this._helpWindow && this._helpWindow._extraHelpWindow) {
                 this._helpWindow._extraHelpWindow.toggleVisibility();
             }
