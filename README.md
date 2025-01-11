@@ -21,7 +21,7 @@
 
 ### KEN_BattleStateInformation.js
 
-[ダウンロード](https://github.com/t-kendama/RPGMakerMZ/blob/master/KEN_BattleStateInformation.js) 
+[ダウンロード](https://github.com/t-kendama/RPGMakerMZ/tree/master/KEN_BattleStateInformation.js) 
 
 * 概要  
 戦闘中に敵味方のステータス情報を表示するウィンドウ機能を提供します。  
@@ -62,7 +62,7 @@
 
 ### KEN_CustomizeGauge.js
 
-[ダウンロード](https://github.com/t-kendama/RPGMakerMZ/blob/master/KEN_CustomizeGauge.js) 
+[ダウンロード](https://github.com/t-kendama/RPGMakerMZ/tree/master/KEN_CustomizeGauge.js) 
 
 * 概要  
 アクターごとのパラメータ描画形式をカスタマイズします。  
@@ -84,7 +84,7 @@
 
 ### KEN_StackState.js
 
-[ダウンロード](https://github.com/t-kendama/RPGMakerMZ/blob/master/KEN_StackState.js) 
+[ダウンロード](https://github.com/t-kendama/RPGMakerMZ/tree/master/KEN_StackState.js) 
 
 * 概要  
 効果を累積するステート（以下累積ステート）を作成します。
@@ -146,7 +146,7 @@
 
 ### KEN_TermHelpWindow.js
 
-[ダウンロード](https://github.com/t-kendama/RPGMakerMZ/blob/master/KEN_TermHelpWindow.js) 
+[ダウンロード](https://github.com/t-kendama/RPGMakerMZ/tree/master/KEN_TermHelpWindow.js) 
 
 * 概要  
 用語の説明を行うヘルプウィンドウ機能を提供します。  
@@ -155,7 +155,7 @@
 ![TermHelp01](https://github.com/t-kendama/RPGMakerMZ/blob/master/images/KEN_TermHelpWindow01.png)
 
 ## 規約
-[MITライセンス](https://github.com/t-kendama/RPGMakerMZ/blob/main/LICENSE)に準拠します。
+[MITライセンス](https://github.com/t-kendama/RPGMakerMZ/tree/main/LICENSE)に準拠します。
 
 ## 作者連絡先
 (X): https://x.com/t_kendama  
