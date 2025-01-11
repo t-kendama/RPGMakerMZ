@@ -15,7 +15,7 @@
  * @plugindesc 戦闘中にステート一覧やバトラーの情報を表示
  * @author KEN
  * @version 1.0.0
- * @url https://github.com/t-kendama/RPGMakerMZ/tree/master/KEN_BattleStateInformation.js
+ * @url https://github.com/t-kendama/RPGMakerMZ/blob/main/KEN_BattleStateInformation.js
  * 
  * @help
  *
@@ -170,7 +170,7 @@
  * @type number
  * @text 行数
  * @desc バトラー情報エリアに表示する行数です。
- * @default 1
+ * @default 3
  * @min 1
  * @parent BattlerDisplayConfig
  * 
@@ -217,14 +217,14 @@
  * @type string
  * @text ステート無しのテキスト
  * @desc ステートが付与されていない場合の表示テキストです。
- * @default ステートはありません
+ * @default \\C[8]ステートはありません
  * @parent StateDisplayConfig
  * 
  * @param maxRows
  * @type number
  * @text ステート表示数
  * @desc 表示するステートの個数を設定します。
- * @default 4
+ * @default 5
  * @min 1
  * @parent StateDisplayConfig
  * 
