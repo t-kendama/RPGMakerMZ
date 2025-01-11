@@ -1,12 +1,14 @@
 /*
 ----------------------------------------------------------------------------
- KEN_StackState v1.0.2
+ KEN_StackState v1.0.3
 ----------------------------------------------------------------------------
  (C)2024 KEN
  This software is released under the MIT License.
  http://opensource.org/licenses/mit-license.php
 ----------------------------------------------------------------------------
  Version
+ 1.0.3 2025/01/11 ヘルプ誤記修正
+                  $gameActors.actor().stateStack() メソッドの仕様変更
  1.0.2 2024/11/30 ステート自動付与がONのとき、ステート付与処理が必ず行われていた不具合修正
                   通常攻撃属性のステート付与に対応
  1.0.1 2024/11/30 与ダメージ時にスタックを上昇させる機能追加
@@ -18,9 +20,9 @@
 */
 /*:
  * @target MZ
- * @plugindesc 累積ステートプラグイン
+ * @plugindesc 累積ステートプラグイン (v1.0.3)
  * @author KEN
- * @version 1.0.2
+ * @version 1.0.3
  * @url https://github.com/t-kendama/RPGMakerMZ/edit/master/KEN_StackState.js
  * 
  * @help
@@ -192,11 +194,12 @@
  * 
  * 
  * -------------------------  スクリプト  -------------------------
- * $gameActors.actor(アクターID).stateStack(ステートID, スタック増減値)
- * アクターのスタック値を取得
+ * $gameActors.actor(アクターID).stateStack(ステートID)
+ * アクターのスタック値を取得。
+ * 累積ステートが未設定のステートIDを指定した場合、-1が返ります。
  *
  * $gameActors.actor(アクターID).gainStack(ステートID, スタック増減値)
- * アクターのスタック数を増減
+ * アクターのスタック数を増減。
  * 
  * 
  * 
@@ -790,7 +793,7 @@
 
   // スタック値を取得
   Game_BattlerBase.prototype.stateStack = function(stateId) {
-    return this._stackStates[stateId] ? this._stackStates[stateId] : 0;
+    return this._stackStates[stateId] ? this._stackStates[stateId] : -1;
   };
 
   // スタック一覧を取得（アイコン描画用）
@@ -808,7 +811,6 @@
   };
 
   Game_BattlerBase.prototype.gainStack = function(stateId, value) {
-    const previousStack = this._stackStates[stateId] || 0;
     this.autoAddStateWithStack(stateId, value);  // ステート自動付与処理
     if(this.gainStackAvailable(stateId)) {
       let sum = Math.min(this._stackStates[stateId] + value);
@@ -867,6 +869,7 @@
     delete this._stackStates[stateId];
   };
 
+  // ターン数と連動している場合 スタックを減らす
   const _Game_BattlerBase_updateStateTurns = Game_BattlerBase.prototype.updateStateTurns;
   Game_BattlerBase.prototype.updateStateTurns = function() {
     _Game_BattlerBase_updateStateTurns.call(this);
@@ -886,10 +889,15 @@
     return false;
   };
 
+  // パラメータ算出用のスタック取得メソッド
+  Game_BattlerBase.prototype.getParamStack = function(stateId) {
+    return Math.max(this.stateStack(stateId), 0);
+  };
+
   Game_BattlerBase.prototype.stackElementRate = function(elementId) {
     let result = 0;
     for (const stateId of this._states) {
-      result += Math.floor(this.evaluateStackParam(StackStateConfig.elementRate(stateId, elementId)) * this.stateStack(stateId));
+      result += Math.floor(this.evaluateStackParam(StackStateConfig.elementRate(stateId, elementId)) * this.getParamStack(stateId));
     }
     return result / 100;
   };
@@ -897,7 +905,7 @@
   Game_BattlerBase.prototype.stackDebuffRate = function(paramId) {
     let result = 0;
     for (const stateId of this._states) {
-      result += Math.floor(this.evaluateStackParam(StackStateConfig.debuffRate(stateId, paramId)) * this.stateStack(stateId));
+      result += Math.floor(this.evaluateStackParam(StackStateConfig.debuffRate(stateId, paramId)) * this.getParamStack(stateId));
     }
     return result / 100;
   };
@@ -905,7 +913,7 @@
   Game_BattlerBase.prototype.stackStateRate = function(argStateId) {
     let result = 0;
     for (const stateId of this._states) {
-      result += Math.floor(this.evaluateStackParam(StackStateConfig.stateRate(stateId, argStateId)) * this.stateStack(stateId));
+      result += Math.floor(this.evaluateStackParam(StackStateConfig.stateRate(stateId, argStateId)) * this.getParamStack(stateId));
     }
     return result / 100;
   };
@@ -913,7 +921,7 @@
   Game_BattlerBase.prototype.paramStackRate = function(paramId) {
     let result = 0;
     for (const stateId of this._states) {
-      result += this.evaluateStackParam(StackStateConfig.paramRate(stateId, paramId)) * this.stateStack(stateId);
+      result += this.evaluateStackParam(StackStateConfig.paramRate(stateId, paramId)) * this.getParamStack(stateId);
     }
     return 1 + result / 100;
   };
@@ -921,7 +929,7 @@
   Game_BattlerBase.prototype.paramStackAdd = function(paramId) {
     let result = 0;
     for (const stateId of this._states) {
-      result += Math.floor(this.evaluateStackParam(StackStateConfig.paramAdd(stateId, paramId)) * this.stateStack(stateId));
+      result += Math.floor(this.evaluateStackParam(StackStateConfig.paramAdd(stateId, paramId)) * this.getParamStack(stateId));
     }
     return result;
   };
@@ -929,7 +937,7 @@
   Game_BattlerBase.prototype.xparamStack = function(xparamId) {
     let result = 0;
     for (const stateId of this._states) {
-      result += Math.floor(this.evaluateStackParam(StackStateConfig.xparam(stateId, xparamId)) * this.stateStack(stateId));
+      result += Math.floor(this.evaluateStackParam(StackStateConfig.xparam(stateId, xparamId)) * this.getParamStack(stateId));
     }
     return result / 100;
   };
@@ -937,7 +945,7 @@
   Game_BattlerBase.prototype.sparamStack = function(sparamId) {
     let result = 0;
     for (const stateId of this._states) {
-      result += Math.floor(this.evaluateStackParam(StackStateConfig.sparam(stateId, sparamId)) * this.stateStack(stateId));
+      result += Math.floor(this.evaluateStackParam(StackStateConfig.sparam(stateId, sparamId)) * this.getParamStack(stateId));
     }
     return result / 100;
   };
@@ -953,7 +961,7 @@
   Game_BattlerBase.prototype.attackStateStack = function(attackStateId) {
     let result = 0;
     for (const stateId of this._states) {
-      result += Math.floor(this.evaluateStackParam(StackStateConfig.attackState(stateId, attackStateId)) * this.stateStack(stateId));
+      result += Math.floor(this.evaluateStackParam(StackStateConfig.attackState(stateId, attackStateId)) * this.getParamStack(stateId));
     }
     return result;
   };
@@ -961,7 +969,7 @@
   Game_BattlerBase.prototype.attackSpeedStack = function() {
     let result = 0;
     for (const stateId of this._states) {
-      result += Math.floor(this.evaluateStackParam(StackStateConfig.attackSpeed(stateId)) * this.stateStack(stateId));
+      result += Math.floor(this.evaluateStackParam(StackStateConfig.attackSpeed(stateId)) * this.getParamStack(stateId));
     }
     return result;
   };
@@ -969,7 +977,7 @@
   Game_BattlerBase.prototype.attackTimesStack = function() {
     let result = 0;
     for (const stateId of this._states) {
-      result += Math.floor(this.evaluateStackParam(StackStateConfig.attackTimes(stateId)) * this.stateStack(stateId));
+      result += Math.floor(this.evaluateStackParam(StackStateConfig.attackTimes(stateId)) * this.getParamStack(stateId));
     }
     return result;
   };
@@ -1290,7 +1298,6 @@
     if (value > 0) {
       const item = this.item();
       const elements = getItemElements(this.subject(), item); // アイテムの属性IDを取得
-      console.log(elements)
 
       // 被ダメージ時のスタック処理
       const stackStateTraitsReceive = target.getStackStateTrait("StackHpDamageReceive");
