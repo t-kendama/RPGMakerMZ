@@ -19,6 +19,14 @@
 
 ## プラグイン説明
 
+### KEN_BattleStateInformation.js
+
+[ダウンロード](https://github.com/t-kendama/RPGMakerMZ/blob/master/KEN_BattleStateInformation.js) 
+
+* 概要  
+戦闘中に敵味方のステータス情報を表示するウィンドウ機能を提供します。  
+ステートの内容や任意のステータス情報を表示することが可能です。
+
 ### KEN_DamageCutShield.js
 
 [ダウンロード](https://github.com/t-kendama/RPGMakerMZ/blob/master/KEN_DamageCutShield.js) 
