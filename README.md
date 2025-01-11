@@ -27,6 +27,8 @@
 戦闘中に敵味方のステータス情報を表示するウィンドウ機能を提供します。  
 ステートの内容や任意のステータス情報を表示することが可能です。
 
+![BattleStateInformation01](https://github.com/t-kendama/RPGMakerMZ/blob/master/images/BattleStateInformation_001.png)
+
 ### KEN_DamageCutShield.js
 
 [ダウンロード](https://github.com/t-kendama/RPGMakerMZ/blob/master/KEN_DamageCutShield.js) 
