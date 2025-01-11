@@ -1,12 +1,11 @@
 /*
 ----------------------------------------------------------------------------
- KEN_StackState v1.0.3
-----------------------------------------------------------------------------
  (C)2024 KEN
  This software is released under the MIT License.
  http://opensource.org/licenses/mit-license.php
 ----------------------------------------------------------------------------
  Version
+ 1.0.4 2025/01/11 プラグイン連携対応(KEN_BattleStateInformation.js)
  1.0.3 2025/01/11 ヘルプ誤記修正
                   $gameActors.actor().stateStack() メソッドの仕様変更
  1.0.2 2024/11/30 ステート自動付与がONのとき、ステート付与処理が必ず行われていた不具合修正
@@ -20,9 +19,8 @@
 */
 /*:
  * @target MZ
- * @plugindesc 累積ステートプラグイン (v1.0.3)
+ * @plugindesc 累積ステートプラグイン (v1.0.4)
  * @author KEN
- * @version 1.0.3
  * @url https://github.com/t-kendama/RPGMakerMZ/edit/master/KEN_StackState.js
  * 
  * @help
@@ -567,6 +565,11 @@
  * @type string
  */
 
+var KEN = KEN || {};
+KEN.StackState = {
+    version: "1.0.4", // バージョン情報
+    isLoaded: true    // このプラグインがロードされていることを示すフラグ
+};
 
 (() => {
   "use strict";
