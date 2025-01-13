@@ -1,20 +1,20 @@
 /*
 ----------------------------------------------------------------------------
- KEN_BattleStateInformation v1.0.0
-----------------------------------------------------------------------------
  (C)2024 KEN
  This software is released under the MIT License.
  http://opensource.org/licenses/mit-license.php
 ----------------------------------------------------------------------------
  Version
+ 1.0.1 2025/01/12 プラグイン競合の対応
+                  説明文のスクリプト記述に対応
  1.0.0 2025/01/11 初版
 ----------------------------------------------------------------------------
 */
 /*:
  * @target MZ
- * @plugindesc 戦闘中にステート一覧やバトラーの情報を表示
+ * @plugindesc 戦闘中にステート一覧やバトラーの情報を表示 (v1.0.1)
  * @author KEN
- * @version 1.0.0
+ * @version 1.0.1
  * @url https://github.com/t-kendama/RPGMakerMZ/blob/main/KEN_BattleStateInformation.js
  * 
  * @help
@@ -57,7 +57,7 @@
  * battler.xparam(数値) … 命中率や回避率など追加能力値
  * battler.sparam(数値) … 狙われ率など特殊能力値
  * 
- * 特別な表記法：
+ * 特殊な表記法：
  * 以下の値を指定すると表示内容が変わります。
  * hpGauge ... HPゲージ
  * mpGauge ... MPゲージ
@@ -70,7 +70,6 @@
  * ステートの説明は２行目以降に表示されます。
  * ※プラグインパラメータに未登録のステートは表示されません
  * 
- * 
  * 【プラグイン連携機能】
  * 累積ステートプラグイン（KEN_StackState.js）を導入することで
  * スタックの値をアイコン上に描画できます。
@@ -80,7 +79,16 @@
  * 
  * ！注意！
  * KEN_StackState.jsのバージョンは必ず「v1.0.4」以降を使用ください。
-
+ * 
+ * 
+ * 【ステートの説明について（上級者向け）】
+ * ・制御文字が使用可能です（\V[0] など）
+ * ・\js<XXX>と表記するとjavascriptの実行結果に置き換わります。
+ * また battlerを表記すると表示しているバトラーを取得できます。
+ * 例．
+ * \js<battler.atk>　:バトラーの攻撃力 
+ * \js<battler.level> :バトラーのレベル
+ * 
  * 
  * 【データベースのメモ欄設定】
  * <EnemyOffsetX: オフセット値>
@@ -193,7 +201,7 @@
  * @text 表示項目詳細
  * @desc バトラー情報エリアに表示する項目を設定します。
  * @parent BattlerDisplayConfig
- * @default ["{\"itemText\":\"\",\"itemTextColor\":\"0\",\"itemValue\":\"battler.name()\",\"aline\":\"left\",\"row\":\"1\",\"column\":\"1\"}","{\"itemText\":\"\",\"itemTextColor\":\"0\",\"itemValue\":\"hpGauge\",\"aline\":\"center\",\"row\":\"1\",\"column\":\"2\",\"hideEnemy\":\"true\"}","{\"itemText\":\"\",\"itemTextColor\":\"0\",\"itemValue\":\"Index\",\"aline\":\"right\",\"row\":\"1\",\"column\":\"3\",\"hideEnemy\":\"true\"}","{\"itemText\":\"攻撃力\",\"itemTextColor\":\"16\",\"itemValue\":\"battler.param(2)\",\"aline\":\"right\",\"row\":\"2\",\"column\":\"1\"}","{\"itemText\":\"防御力\",\"itemTextColor\":\"16\",\"itemValue\":\"battler.param(3)\",\"aline\":\"right\",\"row\":\"2\",\"column\":\"2\"}","{\"itemText\":\"魔力\",\"itemTextColor\":\"16\",\"itemValue\":\"battler.param(4)\",\"aline\":\"right\",\"row\":\"2\",\"column\":\"3\"}","{\"itemText\":\"精神力\",\"itemTextColor\":\"16\",\"itemValue\":\"battler.param(5)\",\"aline\":\"right\",\"row\":\"3\",\"column\":\"1\"}","{\"itemText\":\"敏捷性\",\"itemTextColor\":\"16\",\"itemValue\":\"battler.param(6)\",\"aline\":\"right\",\"row\":\"3\",\"column\":\"2\"}","{\"itemText\":\"運\",\"itemTextColor\":\"16\",\"itemValue\":\"battler.param(7)\",\"aline\":\"right\",\"row\":\"3\",\"column\":\"3\"}"]
+ * @default ["{\"itemText\":\"\",\"itemTextColor\":\"0\",\"itemValue\":\"battler.name()\",\"aline\":\"left\",\"row\":\"1\",\"column\":\"1\",\"hideEnemy\":\"false\"}","{\"itemText\":\"\",\"itemTextColor\":\"0\",\"itemValue\":\"hpGauge\",\"aline\":\"center\",\"row\":\"1\",\"column\":\"2\",\"hideEnemy\":\"true\"}","{\"itemText\":\"\",\"itemTextColor\":\"0\",\"itemValue\":\"Index\",\"aline\":\"right\",\"row\":\"1\",\"column\":\"3\",\"hideEnemy\":\"false\"}","{\"itemText\":\"攻撃力\",\"itemTextColor\":\"16\",\"itemValue\":\"battler.param(2)\",\"aline\":\"right\",\"row\":\"2\",\"column\":\"1\"}","{\"itemText\":\"防御力\",\"itemTextColor\":\"16\",\"itemValue\":\"battler.param(3)\",\"aline\":\"right\",\"row\":\"2\",\"column\":\"2\"}","{\"itemText\":\"魔法力\",\"itemTextColor\":\"16\",\"itemValue\":\"battler.param(4)\",\"aline\":\"right\",\"row\":\"2\",\"column\":\"3\"}","{\"itemText\":\"魔法防御\",\"itemTextColor\":\"16\",\"itemValue\":\"battler.param(5)\",\"aline\":\"right\",\"row\":\"3\",\"column\":\"1\"}","{\"itemText\":\"敏捷性\",\"itemTextColor\":\"16\",\"itemValue\":\"battler.param(6)\",\"aline\":\"right\",\"row\":\"3\",\"column\":\"2\"}","{\"itemText\":\"運\",\"itemTextColor\":\"16\",\"itemValue\":\"battler.param(7)\",\"aline\":\"right\",\"row\":\"3\",\"column\":\"3\"}"]
  * 
  * @param StateDisplayConfig
  * @text ステート一覧設定
@@ -280,7 +288,7 @@
  * @param description
  * @type note
  * @text 説明
- * @desc ステートの説明テキスト。この項目はツクールの書式が使用可能です。
+ * @desc ステートの説明テキスト。この項目はツクールの制御文字が使用可能です。
  */
 /*~struct~BattlerAreaConfig:
  * @param itemText
@@ -849,7 +857,7 @@ class Window_BattleStateInfo extends Window_HorzCommand {
                 this.drawGaugeItem(battler, x, y, columnWidth, item);
             } else if (item.itemValue === "Index") {
                 this.drawIndex(x, y, columnWidth, item);
-            } else {
+            } else {               
                 this.drawTextItem(battler, x, y, columnWidth, item);
             }
         }
@@ -883,11 +891,11 @@ class Window_BattleStateInfo extends Window_HorzCommand {
     
     drawTextItem(battler, x, y, columnWidth, item) {
         const itemText = item.itemText || "";
-        const value = evaluateExpression(item.itemValue || "\"\"", battler);
-    
+        const value = String(evaluateExpression(item.itemValue || "\"\"", battler));
+        
         if (itemText) {
             this.changeTextColor(ColorManager.textColor(item.itemTextColor || 0));
-            this.drawText(itemText, x, y, columnWidth / 2, "left");
+            this.drawText(itemText, x, y, columnWidth / 2, "left");            
             this.resetTextColor();
             this.drawText(value, x + columnWidth / 2, y, columnWidth / 2, item.aline || "right");
         } else {
@@ -1086,8 +1094,10 @@ class Window_BattleStateList extends Window_Command {
         const text = $customStates[stateId].exDescription || "";
         const x = rect.x + this.itemPadding();
         const y = rect.y + this.lineHeight();
+        const replaceStackString = this.replaceStackString(text);
+
         this.resetFontSettings();
-        this.drawTextEx(this.replaceStackString(text), x, y, rect.width);
+        this.drawTextEx(this.replaceFormula(replaceStackString), x, y, rect.width);
     }
 
     // テキスト補正
@@ -1101,6 +1111,18 @@ class Window_BattleStateList extends Window_Command {
         } else {
             return input;
         }
+    }
+
+    replaceFormula(string) {
+        return string.replace(/\\js<(.+?)>/g, (_, script) => {
+            try {
+                // `battler`をスコープに含めて評価
+                return Function("battler", `return ${script}`)(this._battler);
+            } catch (e) {
+                console.error("Script evaluation error:", e);
+                return "(error)";
+            }
+        });
     }
 
     drawStateTurn(stateId, rect) {
