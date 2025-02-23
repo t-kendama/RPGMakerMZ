@@ -1,12 +1,13 @@
 /*
 ----------------------------------------------------------------------------
- KEN_CustomizeGauge v1.0.0
+ KEN_CustomizeGauge v1.0.1
 ----------------------------------------------------------------------------
  (C)2024 KEN
  This software is released under the MIT License.
  http://opensource.org/licenses/mit-license.php
 ----------------------------------------------------------------------------
  Version
+ 1.0.1 2025/02/24 外部参照に対応
  1.0.0 2024/11/16 初版
 ----------------------------------------------------------------------------
 */
@@ -14,7 +15,7 @@
  * @target MZ
  * @plugindesc アクターごとのパラメータ描画をカスタマイズ
  * @author KEN
- * @version 1.0.0
+ * @version 1.0.1
  * @url https://github.com/t-kendama/RPGMakerMZ/edit/master/KEN_CustomizeGauge.js
  * 
  * @help
@@ -1273,4 +1274,5 @@
     }
   }
   
+  window.Sprite_CustomGauge = Sprite_CustomGauge;
 })();
