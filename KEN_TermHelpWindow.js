@@ -15,7 +15,7 @@
  * @plugindesc 用語ヘルプウィンドウプラグイン
  * @author KEN
  * @version 1.0.0
- * @url https://github.com/t-kendama/RPGMakerMZ/blob/master/KEN_TermHelpWindow.js
+ * @url https://raw.githubusercontent.com/t-kendama/RPGMakerMZ/refs/heads/master/KEN_TermHelpWindow.js
  * 
  * @help
  * 
