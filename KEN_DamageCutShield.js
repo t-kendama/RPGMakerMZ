@@ -28,7 +28,7 @@
  * @plugindesc ダメージカットを行うシールドを提供します
  * @author KEN
  * @version 1.0.2
- * @url https://github.com/t-kendama/RPGMakerMZ/blob/main/KEN_DamageCutShield.js
+ * @url https://raw.githubusercontent.com/t-kendama/RPGMakerMZ/refs/heads/master/KEN_DamageCutShield.js
  * 
  * @help
  * ダメージカットを行うシールドを提供します。
