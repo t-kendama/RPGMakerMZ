@@ -15,7 +15,7 @@
  * @plugindesc 戦闘中にステート一覧やバトラーの情報を表示 (v1.0.1)
  * @author KEN
  * @version 1.0.1
- * @url https://github.com/t-kendama/RPGMakerMZ/blob/main/KEN_BattleStateInformation.js
+ * @url https://raw.githubusercontent.com/t-kendama/RPGMakerMZ/refs/heads/master/KEN_BattleStateInformation.js
  * 
  * @help
  *
