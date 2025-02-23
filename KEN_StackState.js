@@ -21,7 +21,7 @@
  * @target MZ
  * @plugindesc 累積ステートプラグイン (v1.0.4)
  * @author KEN
- * @url https://github.com/t-kendama/RPGMakerMZ/edit/master/KEN_StackState.js
+ * @url https://raw.githubusercontent.com/t-kendama/RPGMakerMZ/refs/heads/master/KEN_StackState.js
  * 
  * @help
  *
