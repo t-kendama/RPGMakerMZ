@@ -5,6 +5,7 @@
  http://opensource.org/licenses/mit-license.php
 ----------------------------------------------------------------------------
  Version
+ 1.0.5 2025/03/16 プラグイン競合バグ対応
  1.0.4 2025/01/11 プラグイン連携対応(KEN_BattleStateInformation.js)
  1.0.3 2025/01/11 ヘルプ誤記修正
                   $gameActors.actor().stateStack() メソッドの仕様変更
@@ -19,7 +20,7 @@
 */
 /*:
  * @target MZ
- * @plugindesc 累積ステートプラグイン (v1.0.4)
+ * @plugindesc 累積ステートプラグイン (v1.0.5)
  * @author KEN
  * @url https://raw.githubusercontent.com/t-kendama/RPGMakerMZ/refs/heads/master/KEN_StackState.js
  * 
@@ -567,7 +568,7 @@
 
 var KEN = KEN || {};
 KEN.StackState = {
-    version: "1.0.4", // バージョン情報
+    version: "1.0.5", // バージョン情報
     isLoaded: true    // このプラグインがロードされていることを示すフラグ
 };
 
@@ -1511,7 +1512,7 @@ KEN.StackState = {
   Sprite_StateIcon.prototype.initialize = function() {
     _Sprite_StateIcon_initialize.call(this);
     this.createStackSprite();
-    this._stackNum = 0;    
+    this._stackNum = NaN;    
   };
 
   Sprite_StateIcon.prototype.createStackSprite = function() {
