@@ -5,6 +5,7 @@
  http://opensource.org/licenses/mit-license.php
 ----------------------------------------------------------------------------
  Version
+ 1.0.6 2025/03/30 GainStackOwnタグが正常に動作しない不具合修正
  1.0.5 2025/03/16 プラグイン競合バグ対応
  1.0.4 2025/01/11 プラグイン連携対応(KEN_BattleStateInformation.js)
  1.0.3 2025/01/11 ヘルプ誤記修正
@@ -20,7 +21,7 @@
 */
 /*:
  * @target MZ
- * @plugindesc 累積ステートプラグイン (v1.0.5)
+ * @plugindesc 累積ステートプラグイン (v1.0.6)
  * @author KEN
  * @url https://raw.githubusercontent.com/t-kendama/RPGMakerMZ/refs/heads/master/KEN_StackState.js
  * 
@@ -1260,7 +1261,7 @@ KEN.StackState = {
   };
 
   Game_Action.prototype.applyStackState = function(target) {
-    const item = this.item();    
+    const item = this.item();
     const regex = /^GainStack(\d+)$/;
 
     // ターゲットへのスタック処理
@@ -1278,12 +1279,18 @@ KEN.StackState = {
   // 自分自身のスタック処理
   Game_Action.prototype.applyStackStateOwn = function(/*target*/) {    
     const battler = this.subject();
-    const traits = battler.getStackStateTrait("GainStackOwn");
+    const item = this.item();
+    const regex = /^GainStackOwn(\d+)$/;
 
-    Object.entries(traits).forEach(([key, value]) => {
-      const stateId = Number(key);
-      battler.gainStack(stateId, value);
-    }); 
+    Object.entries(item.meta).forEach(([key, value]) => {
+      const match = key.match(regex); // 正規表現でキーをチェック
+      if (match) {
+        const stateId = parseInt(match[1], 10); // 整数値を取得
+        const gainValue = parseInt(value, 10) != 0 ? parseInt(value, 10) : 1; 
+        battler.gainStack(stateId, gainValue);
+        battler.result().stackStates[stateId] = gainValue;
+      }
+    });
   };
 
   // 属性IDの判定
@@ -1429,13 +1436,15 @@ KEN.StackState = {
   const _BattleManager_invokeNormalAction = BattleManager.invokeNormalAction;
   BattleManager.invokeNormalAction = function(subject, target) {
     _BattleManager_invokeNormalAction.call(this, subject, target);
-    this.processOwnEffect();
+    this.processOwnEffect(subject);
     this.processEvasion(subject, target);
   };
 
-  BattleManager.processOwnEffect = function() {
+  // 自分自身へのエフェクト処理
+  BattleManager.processOwnEffect = function(subject) {
     const action = this._action;
     action.applyStackStateOwn();
+    this._logWindow.displayStackEffectOwn(subject);
   };
 
   // 反撃時
@@ -1502,6 +1511,19 @@ KEN.StackState = {
 
   Game_ActionResult.prototype.clearStackStateResult = function() {
     this.stackStates = {};
+  };
+
+  //-----------------------------------------------------------------------------
+  // Window_BattleLog
+  //-----------------------------------------------------------------------------
+  Window_BattleLog.prototype.displayStackEffectOwn = function(subject) {
+    if (subject.result().isStatusAffected()) {
+      this.push("pushBaseLine");
+      this.displayChangedStates(subject);
+      this.displayChangedBuffs(subject);
+      this.push("waitForNewLine");
+      this.push("popBaseLine");
+    }
   };
 
   //-----------------------------------------------------------------------------
