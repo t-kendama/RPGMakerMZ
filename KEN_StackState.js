@@ -5,6 +5,9 @@
  http://opensource.org/licenses/mit-license.php
 ----------------------------------------------------------------------------
  Version
+ 1.0.7 2025/04/06 アウトライン幅を調整する機能追加
+                  スタック数が表示されない場合がある不具合修正
+                  スタックを増減する機能の拡張
  1.0.6 2025/03/30 GainStackOwnタグが正常に動作しない不具合修正
  1.0.5 2025/03/16 プラグイン競合バグ対応
  1.0.4 2025/01/11 プラグイン連携対応(KEN_BattleStateInformation.js)
@@ -21,7 +24,7 @@
 */
 /*:
  * @target MZ
- * @plugindesc 累積ステートプラグイン (v1.0.6)
+ * @plugindesc 累積ステートプラグイン (v1.0.7)
  * @author KEN
  * @url https://raw.githubusercontent.com/t-kendama/RPGMakerMZ/refs/heads/master/KEN_StackState.js
  * 
@@ -192,6 +195,19 @@
  * 記述欄：武器・防具・ステート
  * 身代わり時にスタックが増減します。
  * 
+ * <StackBattleStart[ステートID]:スタック増減値>
+ * 記述欄：武器・防具・ステート
+ * 戦闘開始時にスタックが増減します。
+ * 
+ * <StackActionEnd[ステートID]:スタック増減値>
+ * 記述欄：武器・防具・ステート
+ * 行動終了時にスタックが増減します。
+ * 
+ * <StackTurnEnd[ステートID]:スタック増減値>
+ * 記述欄：武器・防具・ステート
+ * ターン終了時にスタックが増減します。
+ * ※この設定を使用する場合、「ターン数とスタック同期」をOFFにすることを推奨します
+ * 
  * 
  * -------------------------  スクリプト  -------------------------
  * $gameActors.actor(アクターID).stateStack(ステートID)
@@ -200,7 +216,6 @@
  *
  * $gameActors.actor(アクターID).gainStack(ステートID, スタック増減値)
  * アクターのスタック数を増減。
- * 
  * 
  * 
  * 
@@ -267,6 +282,12 @@
  * @desc スタック数のフォントサイズ
  * @type number
  * @default 20
+ * 
+ * @param stackOutLine
+ * @text アウトライン(縁取り幅)
+ * @desc スタック数のアウトライン（縁取り幅）
+ * @type number
+ * @default 3
  * 
  * @param stackAxisX
  * @text スタックX座標
@@ -802,11 +823,13 @@ KEN.StackState = {
   };
 
   // スタック一覧を取得（アイコン描画用）
-  Game_BattlerBase.prototype.stackList = function() {
+  Game_BattlerBase.prototype.iconStackList = function() {
     // 条件：累積ステートかつアイコンが設定されている
+    // かつ アイコンIDが1以上
     const battler = this;
-    return this.states().map(function(state) {
-      if(StackStateConfig.isStackState(state.id)){
+    const statesWithIcons = battler.states().filter(state => state.iconIndex > 0);
+    return statesWithIcons.map(function(state) {
+      if(StackStateConfig.isStackState(state.id) ){
         if(StackStateConfig.isDisplayStack(state.id)) {
           return battler.stateStack(state.id);
         }
@@ -1241,6 +1264,39 @@ KEN.StackState = {
     });
   };
 
+  // バトル開始時のスタック増減
+  const _Game_Battler_onBattleStart = Game_Battler.prototype.onBattleStart;
+  Game_Battler.prototype.onBattleStart = function() {
+    _Game_Battler_onBattleStart.call(this);
+    const stackStateTraitsBattleStart = this.getStackStateTrait("StackBattleStart");
+
+    Object.entries(stackStateTraitsBattleStart).forEach(([key, stack]) => {
+      this.gainStack(Number(key), Number(stack));
+    });
+  };
+
+  // 行動終了時のスタック増減
+  const _Game_Battler_onAllActionsEnd = Game_Battler.prototype.onAllActionsEnd;
+  Game_Battler.prototype.onAllActionsEnd = function() {
+    _Game_Battler_onAllActionsEnd.call(this);
+    const stackStateTraitsActionEnd = this.getStackStateTrait("StackActionEnd");
+
+    Object.entries(stackStateTraitsActionEnd).forEach(([key, stack]) => {
+      this.gainStack(Number(key), Number(stack));
+    });
+  };
+
+  // ターン終了時のスタック増減
+  const _Game_Battler_onTurnEnd = Game_Battler.prototype.onTurnEnd;
+  Game_Battler.prototype.onTurnEnd = function() {
+    _Game_Battler_onTurnEnd.call(this);
+    const stackStateTraitsTurnEnd = this.getStackStateTrait("StackTurnEnd");
+
+    Object.entries(stackStateTraitsTurnEnd).forEach(([key, stack]) => {
+      this.gainStack(Number(key), Number(stack));
+    });
+  };
+
   //-----------------------------------------------------------------------------
   // Game_Action
   //-----------------------------------------------------------------------------
@@ -1550,7 +1606,11 @@ KEN.StackState = {
   };
 
   Sprite_StateIcon.prototype.stackFontSize = function() {
-    return pluginParam.stackFontSize;
+    return pluginParam.stackFontSize || 20;
+  };
+
+  Sprite_StateIcon.prototype.stackOutLine = function() {
+    return pluginParam.stackOutLine || 5;
   };
 
   Sprite_StateIcon.prototype.stackTextColor = function() {
@@ -1561,9 +1621,10 @@ KEN.StackState = {
     this._stackSprite.bitmap.fontSize = this.stackFontSize();
     this._stackSprite.bitmap.textColor = this.stackTextColor();
     this._stackSprite.bitmap.outlineColor = ColorManager.outlineColor();
-    this._stackSprite.bitmap.outlineWidth = 3;
+    this._stackSprite.bitmap.outlineWidth = this.stackOutLine();
   };  
 
+  // アイコン描画更新
   const _Sprite_StateIcon_updateIcon = Sprite_StateIcon.prototype.updateIcon;
   Sprite_StateIcon.prototype.updateIcon = function() {    
     if(this._battler.isStackStateAffected()) {
@@ -1571,7 +1632,7 @@ KEN.StackState = {
       let stacks = [];
       if (this.shouldDisplay()) {
         icons.push(...this._battler.allIcons());
-        stacks = this._battler.stackList();
+        stacks = this._battler.iconStackList();
       }
       if (icons.length > 0) {
         this._animationIndex++;
