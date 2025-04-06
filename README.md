@@ -87,9 +87,9 @@
 [ダウンロード](https://github.com/t-kendama/RPGMakerMZ/tree/master/KEN_StackState.js) 
 
 * 概要  
-効果を累積するステート（以下累積ステート）を作成します。
-累積ステートは内部にスタック（累積する値）を持ち、スタックごとに効果が増幅するようになります。
-例．スタックごとにHP減少量が増加するステート
+効果を累積するステート（以下累積ステート）を作成します。  
+累積ステートは内部にスタック（累積する値）を持ち、スタックごとに効果が増幅するようになります。  
+例．スタックごとにHP減少量が増加するステート など
 
 ![StackState001](https://github.com/t-kendama/RPGMakerMZ/blob/master/images/StackState_001.png)
 
