@@ -7,6 +7,8 @@
  http://opensource.org/licenses/mit-license.php
 ----------------------------------------------------------------------------
  Version
+ 1.0.3 2025/04/06 プラグインコマンド不具合修正
+                  エネミーインデックス0のシールド増減ができない不具合修正
  1.0.2 2024/12/15 プラグインコマンド対応
                   戦闘不能者にシールドが付与されてしまう不具合修正
  1.0.1 2024/11/26 HP再生率のポップパップ表記が0になってしまう不具合修正
@@ -27,8 +29,7 @@
  * @target MZ
  * @plugindesc ダメージカットを行うシールドを提供します
  * @author KEN
- * @version 1.0.2
- * @url https://raw.githubusercontent.com/t-kendama/RPGMakerMZ/refs/heads/master/KEN_DamageCutShield.js
+ * @url https://github.com/t-kendama/RPGMakerMZ/blob/main/KEN_DamageCutShield.js
  * 
  * @help
  * ダメージカットを行うシールドを提供します。
@@ -615,7 +616,7 @@
   });
 
   PluginManager.registerCommand(PLUGIN_NAME, 'GainDamageCutShieldEnemy', args => {
-    if (args.enemyIndex > 0) {
+    if (args.enemyIndex >= 0) {
       const enemy = $gameTroop.members()[args.enemyIndex];
       const value = Number(args.value);
       if(enemy) {
@@ -632,7 +633,7 @@
   });
 
   PluginManager.registerCommand(PLUGIN_NAME, 'ClearDamageCutShieldEnemy', args => {
-    if (args.enemyIndex > 0) {
+    if (args.enemyIndex >= 0) {
       const enemy = $gameTroop.members()[args.enemyIndex];
       if(enemy) {
         enemy.clearDamageCutShield();
