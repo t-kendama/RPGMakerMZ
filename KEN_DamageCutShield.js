@@ -940,7 +940,6 @@
   Game_Battler.prototype.reduceHpWithShield = function() {
     if(this.isStateAffected(STATEID_Shield)){
       const value = this.slipDamageWithShield();
-      console.log(value);
       if (value > 0) {
         this.executeHpDamageWithShield(value);
       }
