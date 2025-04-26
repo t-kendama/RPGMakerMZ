@@ -1,12 +1,15 @@
 /*
 ----------------------------------------------------------------------------
- KEN_DamageCutState v1.0.2
+ KEN_DamageCutState v1.0.4
 ----------------------------------------------------------------------------
  (C)2024 KEN
  This software is released under the MIT License.
  http://opensource.org/licenses/mit-license.php
 ----------------------------------------------------------------------------
  Version
+ 1.0.4 2025/04/26 シールド耐久値をゲージ上に表示しない機能追加
+                  OwnDamageCutShieldタグ機能追加
+                  プラグイン競合エラー修正
  1.0.3 2025/04/06 プラグインコマンド不具合修正
                   エネミーインデックス0のシールド増減ができない不具合修正
  1.0.2 2024/12/15 プラグインコマンド対応
@@ -79,6 +82,12 @@
  * <DamageCutShield: 100> シールドが100増加します
  * <DamageCutShield: -50> シールドが50減少します
  * <DamageCutShield: a.mat> スキル使用者の魔力分のシールドが増加します
+ * 
+ * <OwnDamageCutShield: 数値 or 数式>
+ * 記述欄：アイテム・スキル
+ * 自分自身にシールドを付与します。
+ * 攻撃しつつ自分自身にシールドを付与するような効果が作成できます。
+ * 
  * 
  * 【その他の設定】
  * <PenetrateShield>
@@ -416,6 +425,13 @@
  * @default 0
  * @parent GaugeConfig
  * 
+ * @param drawShieldValue
+ * @text 耐久値を表示
+ * @desc シールド耐久値を描画します
+ * @type boolean
+ * @default true
+ * @parent GaugeConfig
+ * 
  * @param gaugeValueFontSize
  * @text フォントサイズ
  * @desc シールド耐久値のフォントサイズ(デフォルト: 12)
@@ -574,6 +590,7 @@
   const TURN_TurnX = param.turnX || 8;
   const TURN_TurnY = param.turnY || 8;
   const GAUGE_DisplayType = param.displayType || 0;
+  const GAUGE_DrawValue = param.drawShieldValue;
   const GAUGE_Display = param.displayGauge;
   const GAUGE_ValueFontSize = param.gaugeValueFontSize || 16;
   const GAUGE_ValueOffsetX = param.gaugeValueX || 0;
@@ -1013,15 +1030,17 @@
 
   Game_Action.prototype.isShieldAction = function() {
     const item = this.item();
-    return item && item.meta.DamageCutShield;
+    return item && (item.meta.DamageCutShield || item.meta.OwnDamageCutShield);
   };
 
   const _KEN_Game_Action_applyItemUserEffect = Game_Action.prototype.applyItemUserEffect;
   Game_Action.prototype.applyItemUserEffect = function(target) {
     this.applyItemDamageCutShield(target);
-    _KEN_Game_Action_applyItemUserEffect.call(this);
+    this.applyItemDamageCutShieldOwn();
+    _KEN_Game_Action_applyItemUserEffect.call(this, target);
   };
 
+  // ターゲットに対するシールド増減処理
   Game_Action.prototype.applyItemDamageCutShield = function(target) {
     const item = this.item();
     const value = this.evalMetaFormula(target, item.meta.DamageCutShield);
@@ -1029,6 +1048,23 @@
       const gainValue = target.gainDamageCutShield(value);  // バトラーのシールドを増減
       target.result().gainShieldValue = gainValue;
       this.makeSuccess(target);
+    }
+    if(value > 0) {
+      target.result().gainShield = true;
+    }
+    if(value < 0) {
+      target.result().lossShield = true;
+    }
+  };
+
+  // 自分自身に対するシールド増減処理
+  Game_Action.prototype.applyItemDamageCutShieldOwn = function() {
+    const item = this.item();
+    const target = this.subject();
+    const value = this.evalMetaFormula(target, item.meta.OwnDamageCutShield);
+    if(value != 0) {
+      const gainValue = target.gainDamageCutShield(value);  // バトラーのシールドを増減
+      target.result().gainShieldValue = gainValue;
     }
     if(value > 0) {
       target.result().gainShield = true;
@@ -1154,7 +1190,7 @@
   Sprite_Gauge.prototype.drawShieldIcon = function() {
     if(!this._shieldIconSprite) return;
     const sprite = this._shieldIconSprite;
-    if( this.isShieldStateAffected() ) {        
+    if( this.isShieldStateAffected() ) {
       sprite.show();
     } else {
       sprite.hide();
@@ -1197,7 +1233,7 @@
   };
 
   Sprite_Gauge.prototype.drawShieldValue = function() {
-    if(!this.isShieldStateAffected()) return;
+    if(!this.isShieldStateAffected() || !GAUGE_DrawValue) return;
     const currentValue = this.currentShieldValue();
     const width = this.bitmapWidth();
     const height = this.textHeight();
