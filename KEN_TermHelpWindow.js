@@ -128,7 +128,7 @@
  * @param TermWindowTextColor
  * @type color
  * @text 用語テキスト色
- * @desc 用語を表示する時の共通色を設定します。個別設定がある場合はそちらが優先されます。
+ * @desc 用語を表示する時の共通色を設定します。
  * @default 6
  * @parent termWindowConfig
  * 
