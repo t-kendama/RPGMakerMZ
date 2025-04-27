@@ -1,12 +1,14 @@
 /*
 ----------------------------------------------------------------------------
- KEN_TermHelpWindow v1.0.0
+ KEN_TermHelpWindow v1.0.1
 ----------------------------------------------------------------------------
  (C)2024 KEN
  This software is released under the MIT License.
  http://opensource.org/licenses/mit-license.php
 ----------------------------------------------------------------------------
  Version
+ 1.0.1 2025/04/27 テキスト表示位置調整機能の追加
+                  用語の色変更機能の追加
  1.0.0 2025/01/01 初版
 ----------------------------------------------------------------------------
 */
@@ -14,7 +16,6 @@
  * @target MZ
  * @plugindesc 用語ヘルプウィンドウプラグイン
  * @author KEN
- * @version 1.0.0
  * @url https://raw.githubusercontent.com/t-kendama/RPGMakerMZ/refs/heads/master/KEN_TermHelpWindow.js
  * 
  * @help
@@ -56,6 +57,10 @@
  * @desc 用語ウィンドウの表示シーンを設定します。
  * @default ["{\"SceneName\":\"Scene_Item\",\"Alignment\":\"0\"}","{\"SceneName\":\"Scene_Equip\",\"Alignment\":\"0\"}","{\"SceneName\":\"Scene_Skill\",\"Alignment\":\"0\"}","{\"SceneName\":\"Scene_Battle\",\"Alignment\":\"1\"}","{\"SceneName\":\"Scene_Shop\",\"Alignment\":\"0\"}"]
  * 
+ * @param helpWindowConfig
+ * @text ヘルプウィンドウ設定
+ * @desc ヘルプウィンドウの表示設定です この項目は使用しません
+ * 
  * @param KeySymbol
  * @type combo
  * @text 表示切替キー
@@ -64,36 +69,69 @@
  * @option shift
  * @option control
  * @option tab
+ * @parent helpWindowConfig
  * 
  * @param DisplayText
  * @type string
- * @text 用語ヘルプテキスト
- * @desc 用語ヘルプが表示できることを示す文章。ヘルプウィンドウの右下に表示されます。
+ * @text 表示切替テキスト
+ * @desc 表示切替のテキスト。ヘルプウィンドウ上に表示されます。
  * @default Shift: 用語表示
+ * @parent helpWindowConfig
+ * 
+ * @param SwitchTextAlignment
+ * @type select
+ * @text 表示切替テキスト位置
+ * @desc 表示切替テキストの表示位置
+ * @option 左上
+ * @value 0
+ * @option 左下
+ * @value 1
+ * @option 右上
+ * @value 2
+ * @option 右下
+ * @value 3
+ * @default 3
+ * @parent helpWindowConfig
+ * 
+ * @param TermColor
+ * @type color
+ * @text 用語テキスト色
+ * @desc 用語を表示する時の色を設定します。
+ * @default 6
+ * @parent helpWindowConfig
  *
+ * @param termWindowConfig
+ * @text 用語ウィンドウ設定
+ * @desc 用語ウィンドウの表示設定です この項目は使用しません
+ * 
  * @param TermFontSize
  * @type number
  * @text 用語フォントサイズ
  * @desc 用語名のフォントサイズを設定します。
  * @default 20
+ * @parent termWindowConfig
  *
  * @param DescriptionFontSize
  * @type number
  * @text 説明フォントサイズ
  * @desc 用語説明のフォントサイズを設定します。
  * @default 16
+ * @parent termWindowConfig
  *
  * @param TermSpacing
  * @type number
  * @text 用語間スペース
  * @desc 用語が複数ある時のスペース（縦方向）を設定します。
  * @default 10
+ * @parent termWindowConfig
  * 
- * @param TermColor
+ * @param TermWindowTextColor
  * @type color
- * @text 用語カラー
- * @desc 用語を表示する時の色を設定します。
+ * @text 用語テキスト色
+ * @desc 用語を表示する時の共通色を設定します。個別設定がある場合はそちらが優先されます。
  * @default 6
+ * @parent termWindowConfig
+ * 
  */
 
 /*~struct~Term:
@@ -132,7 +170,6 @@
  * @option 右下
  * @value 3
  * @default 0
- * 
  */
 
 (() => {
@@ -148,8 +185,10 @@
     const TermFontSize = Number(Parameters["TermFontSize"] || 20);
     const DescriptionFontSize = Number(Parameters["DescriptionFontSize"] || 16);
     const TermSpacing = Number(Parameters["TermSpacing"] || 10);
-    const TermColor = Parameters["TermColor"] || 0;
+    const HelpWindowTextColor = Parameters["TermColor"] || 6;
+    const TermWindowTextColor = Parameters["TermWindowTextColor"] ?? 0;
     const DisplayText = Parameters["DisplayText"] || "";
+    const SwitchTextAlignment = Number(Parameters["SwitchTextAlignment"]) ?? 3;
 
 
     //====================================================================
@@ -195,6 +234,10 @@
             this._visibleToggle = false;
         }
 
+        termTextColor() {
+            this.changeTextColor(ColorManager.textColor(TermWindowTextColor));
+        }
+
         setTermsText(terms) {
             this.clear();
             this._text = terms.map(term => {
@@ -213,10 +256,12 @@
             terms.forEach((term, index) => {
                 this.contents.fontSize = TermFontSize;
                 const termText = term.Term;
+                this.termTextColor();
                 this.drawText(termText, 0, y, this.contentsWidth(), "left");
                 y += this.lineHeight();
 
                 this.contents.fontSize = DescriptionFontSize;
+                this.changeTextColor(ColorManager.normalColor());
                 this.resetTextColor();
                 const descriptionText = term.Description.replace(/^"|"$/g, "").replace(/\\n/g, "\n");
                 const lines = descriptionText.split("\n");
@@ -283,7 +328,7 @@
             const regex = new RegExp(`(^|[^\w])(${term.Term})(?=[^\w]|$)`, "gu");
             text = text.replace(regex, (match, p1, p2) => {
                 matchedTerms.push(term);
-                return `${p1}\x1bC[${TermColor}]${p2}\x1bC[0]`;
+                return `${p1}\x1bC[${HelpWindowTextColor}]${p2}\x1bC[0]`;
             });
         }
         return { text, matchedTerms };
@@ -337,12 +382,13 @@
             const text = DisplayText;
             const fontSize = 18;
             const width = this.textWidth(DisplayText);
-            const x = this.contentsWidth() - width;
-            const y = this.contentsHeight() - fontSize - this.padding;
+            const x = [2, 3].includes(SwitchTextAlignment) ? this.contentsWidth() - width : 0;
+            const y = [1, 3].includes(SwitchTextAlignment) ? this.contentsHeight() - fontSize - this.padding : 0;
+            const alignment =  [2, 3].includes(SwitchTextAlignment) ? "right" : "left";
             this.contents.fontSize = fontSize;
             this.contents.fontFace = $gameSystem.mainFontFace();
             this.resetTextColor();
-            this.drawText(text, x, y, width, "right");
+            this.drawText(text, x, y, width, alignment);
         }
     };
 
