@@ -5,6 +5,8 @@
  http://opensource.org/licenses/mit-license.php
 ----------------------------------------------------------------------------
  Version
+ 1.0.2 2025/04/28 キー操作が無効にならない不具合修正
+                  TPBバトルでゲージが増加してしまう不具合修正
  1.0.1 2025/01/12 プラグイン競合の対応
                   説明文のスクリプト記述に対応
  1.0.0 2025/01/11 初版
@@ -12,10 +14,9 @@
 */
 /*:
  * @target MZ
- * @plugindesc 戦闘中にステート一覧やバトラーの情報を表示 (v1.0.1)
+ * @plugindesc 戦闘中にステート一覧やバトラーの情報を表示 (v1.0.2)
  * @author KEN
- * @version 1.0.1
- * @url https://raw.githubusercontent.com/t-kendama/RPGMakerMZ/refs/heads/master/KEN_BattleStateInformation.js
+ * @url https://github.com/t-kendama/RPGMakerMZ/blob/main/KEN_BattleStateInformation.js
  * 
  * @help
  *
@@ -225,7 +226,7 @@
  * @type string
  * @text ステート無しのテキスト
  * @desc ステートが付与されていない場合の表示テキストです。
- * @default \\C[8]ステートはありません
+ * @default ステートはありません
  * @parent StateDisplayConfig
  * 
  * @param maxRows
@@ -370,7 +371,7 @@ const WindowWidth = param.windowWidth || 800;
 const WindowX = param.windowX || "(Graphics.boxWidth - WindowWidth) / 2";
 const WindowY = param.windowY || "(Graphics.boxWidth - WindowHeight) / 2";
 const TurnText = param.turnText || "残り%1ターン";
-const DisplayKey = param.displayKey || 'shift';
+const DisplayKey = param.displayKey || '';
 
 const BattlerAreaRows = param.battlerAreaRows || 3;
 const BattlerGraphicWidth = param.battlerGraphicWidth || 0;
@@ -542,8 +543,7 @@ Scene_Battle.prototype.openStateInfoWindow = function() {
 
 const _Scene_Battle_prototype_isAnyInputWindowActive = Scene_Battle.prototype.isAnyInputWindowActive;
 Scene_Battle.prototype.isAnyInputWindowActive = function() {
-    if (_Scene_Battle_prototype_isAnyInputWindowActive.call(this)) return true;
-    return this._actorCommandWindow.active;
+    return _Scene_Battle_prototype_isAnyInputWindowActive.call(this) || this._windowBattleStateInfo.active;
 };
 
 const _Window_Battle_needsInputWindowChange = Scene_Battle.prototype.needsInputWindowChange;
