@@ -590,7 +590,7 @@
 
 var KEN = KEN || {};
 KEN.StackState = {
-    version: "1.0.5", // バージョン情報
+    version: "1.0.7", // バージョン情報
     isLoaded: true    // このプラグインがロードされていることを示すフラグ
 };
 
