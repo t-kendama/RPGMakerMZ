@@ -16,6 +16,7 @@
 | KEN_StackState.js | 累積ステートプラグイン | [DL](https://github.com/t-kendama/RPGMakerMZ/blob/master/KEN_StackState.js) |
 | KEN_PartyHpCostSkill.js | パーティメンバーHPを消費するスキル | [DL](https://github.com/t-kendama/RPGMakerMZ/blob/master/KEN_PartyHpCostSkill.js) |
 | KEN_TermHelpWindow.js | 用語ヘルプウィンドウ | [DL](https://github.com/t-kendama/RPGMakerMZ/blob/master/KEN_TermHelpWindow.js) |
+| KEN_CategoryState.js | ステートのカテゴリを設定します | [DL](https://github.com/t-kendama/RPGMakerMZ/blob/master/KEN_CategoryState.js) |
 
 ## プラグイン説明
 
@@ -153,6 +154,16 @@
 ヘルプウィンドウ中の文字列から用語を検出し、用語の説明を追加のヘルプウィンドウで表示できるようになります。
 
 ![TermHelp01](https://github.com/t-kendama/RPGMakerMZ/blob/master/images/KEN_TermHelpWindow01.png)
+
+
+### KEN_CategoryState.js
+
+[ダウンロード](https://github.com/t-kendama/RPGMakerMZ/tree/master/KEN_CategoryState.js) 
+
+* 概要  
+ステートにカテゴリを定義し、カテゴリ単位のステート解除が可能になります。  
+・スキル・アイテムでカテゴリごとのステート解除ができる  
+・優先度を指定して解除順を制御できる  
 
 ## 規約
 [MITライセンス](https://github.com/t-kendama/RPGMakerMZ/tree/main/LICENSE)に準拠します。
