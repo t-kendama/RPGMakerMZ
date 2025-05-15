@@ -34,8 +34,7 @@
  * 
  * 優先順位が同じステートがある場合、ステートIDが若い方から順に解除されます。
  * 数値を省略すると、カテゴリに属するすべてのステートを解除します。
- *  
- * 
+ *
  *
  * @param Category
  * @type struct<CategoryConfig>[]
@@ -43,7 +42,6 @@
  * @desc カテゴリ設定です。
  * @default []
  */
-
 /*~struct~CategoryConfig:
  * @param name
  * @type string
@@ -69,6 +67,13 @@
  * @default 0
  * @min 0
  */
+
+
+var KEN = KEN || {};
+KEN.CategoryState = {
+    version: "1.0.0", // バージョン情報
+    isLoaded: true    // このプラグインがロードされていることを示すフラグ
+};
 
 (() => {
   "use strict";
@@ -176,5 +181,6 @@
     target.removeStatesByCategory(categoryName, count);
   };
   
-  })();
-  
+  window.CategoryStateManager = CategoryStateManager; // グローバル公開
+
+  })();  
