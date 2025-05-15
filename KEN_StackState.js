@@ -5,6 +5,9 @@
  http://opensource.org/licenses/mit-license.php
 ----------------------------------------------------------------------------
  Version
+ 1.0.8 2025/05/15 ステート抵抗時・付与時にスタックを増減する機能追加
+                  メッセージログが二重に出力される不具合修正
+                  KEN_CategoryState.js連携に対応
  1.0.7 2025/04/06 アウトライン幅を調整する機能追加
                   スタック数が表示されない場合がある不具合修正
                   スタックを増減する機能の拡張
@@ -24,7 +27,7 @@
 */
 /*:
  * @target MZ
- * @plugindesc 累積ステートプラグイン (v1.0.7)
+ * @plugindesc 累積ステートプラグイン (v1.0.8)
  * @author KEN
  * @url https://raw.githubusercontent.com/t-kendama/RPGMakerMZ/refs/heads/master/KEN_StackState.js
  * 
@@ -140,16 +143,35 @@
  * 属性IDを指定すると、その属性IDダメージを受けた時のみスタックが増減します。
  * ダメージが0の場合、効果は発動しません。
  * 
- * <StackStateApply[ステートID]:スタック増減値, ステートID(省略可)>
+ * <StackStateApply[ステートID]:スタック増減値, ステートID or カテゴリ名※(省略可)>
  * 記述欄：武器・防具・ステート
  * ステートを付与した時、攻撃対象のスタックが増減します。
- * ステートIDを指定した場合、設定したステートIDが付与した時に
+ * ステートIDまたはカテゴリ名を指定した場合、そのステートを付与した時
  * スタックが増減します。
+ * （※要 KEN_CategoryState.js）
  * 
- * 記述例．
+ * 記述例：
  * <StackStateApply10:1,5>
  * ステートID5のステートを付与した時、
  * 累積ステートID10のスタックが1増加します。
+ * 
+ * <StackStateApply5:1,Buff>
+ * カテゴリ「Buff」に属するステートを付与したとき、
+ * 累積ステートID5のスタックが1増加します。
+ * ※本機能を使用する場合、KEN_CategoryState.jsの導入が必要です
+ * 
+ * <StackStateInflict[ステートID]:スタック増減値, ステートID or カテゴリ名※(省略可)>
+ * 記述欄：武器・防具・ステート
+ * ステートを付与した時、付与者のスタックが増減します。
+ * ステートIDまたはカテゴリ名を指定した場合、そのステートを付与した時
+ * スタックが増減します。
+ * （※要 KEN_CategoryState.js）
+ * 
+ * <StackStateResist[ステートID]:スタック増減値, ステートID or カテゴリ名(省略可)>
+ * 記述欄：武器・防具・ステート
+ * ステート付与に抵抗した時、そのバトラーのスタックが増減します。
+ * ステートIDまたはカテゴリ名を指定した場合、そのステートに抵抗した時
+ * スタックが増減します。
  * 
  * <StackHpLoss[ステートID]:スタック増減値>
  * 記述欄：武器・防具・ステート
@@ -590,7 +612,7 @@
 
 var KEN = KEN || {};
 KEN.StackState = {
-    version: "1.0.7", // バージョン情報
+    version: "1.0.8", // バージョン情報
     isLoaded: true    // このプラグインがロードされていることを示すフラグ
 };
 
@@ -610,6 +632,11 @@ KEN.StackState = {
         }
     }
   }));
+
+  // プラグイン判定
+  function isCategoryStateEnabled() {
+    return typeof KEN !== "undefined" && typeof KEN.CategoryState !== "undefined";
+  }
 
   //-----------------------------------------------------------------------------
   // Stack_State
@@ -1159,7 +1186,10 @@ KEN.StackState = {
                 if (match) {
                     const stateId = parseInt(match[1], 10); // ステートIDを取得
                     // カンマで区切られた値を配列として格納
-                    const values = value.split(",").map(v => parseInt(v.trim(), 10) || 0);
+                    const values = value.split(",").map(v => {
+                      const trimmed = v.trim();
+                      return isNaN(Number(trimmed)) ? trimmed : Number(trimmed);
+                    });
                     traits[stateId] = traits[stateId] || []; // 配列を初期化
                     traits[stateId].push(...values); // 配列に値を追加
                 }
@@ -1174,7 +1204,10 @@ KEN.StackState = {
             if (match) {
                 const stateId = parseInt(match[1], 10); // ステートIDを取得
                 // カンマで区切られた値を配列として格納
-                const values = value.split(",").map(v => parseInt(v.trim(), 10) || 0);
+                const values = value.split(",").map(v => {
+                  const trimmed = v.trim();
+                  return isNaN(Number(trimmed)) ? trimmed : Number(trimmed);
+                });
                 traits[stateId] = traits[stateId] || []; // 配列を初期化
                 traits[stateId].push(...values); // 配列に値を追加
             }
@@ -1316,6 +1349,7 @@ KEN.StackState = {
     this.applyStackState(target);
   };
 
+  // ターゲットへのスタック処理
   Game_Action.prototype.applyStackState = function(target) {
     const item = this.item();
     const regex = /^GainStack(\d+)$/;
@@ -1420,7 +1454,7 @@ KEN.StackState = {
     }
   };
 
-  // ステート付与時
+  // ステート付与・抵抗時
   const _Game_Action_itemEffectAddState = Game_Action.prototype.itemEffectAddState;
   Game_Action.prototype.itemEffectAddState = function(target, effect) {
     const beforeAddedStates = [...target.result().addedStates]; // 付与前のステート
@@ -1428,12 +1462,18 @@ KEN.StackState = {
     const newlyAddedStates = target.result().addedStates.filter(
       stateId => !beforeAddedStates.includes(stateId)
     );
+    // ステート付与判定
     if (isItemEffectStateMatched(this.subject(), newlyAddedStates, effect)) {
-      this.itemEffectAddStackWithState(target, effect);
+      this.stackStateApply(target, effect);
+      this.stackStateInfect(effect);
+    }
+    // ステート抵抗判定
+    if (isItemEffectFailed(target, effect)) {
+      this.itemEffectAddStackResist(target, effect);
     }
   };
 
-  //
+  // ステート付与に成功したか判定
   function isItemEffectStateMatched(subject, newlyAddedStates, effect) {
     if(effect.dataId == 0) {
       const targetArray = subject.attackStates();
@@ -1442,11 +1482,74 @@ KEN.StackState = {
     return newlyAddedStates.includes(effect.dataId);
   }
 
+  // ステート付与に失敗したかどうかを判定
+  function isItemEffectFailed(target, effect) {
+    if (effect.code === Game_Action.EFFECT_ADD_STATE) {
+      const stateId = effect.dataId;
+      const result = target.result();
+      return !result.addedStates.includes(stateId);
+    }
+    // ステート付与ではない効果の場合は無条件で false
+    return false;
+  }
+
+  // ステート付与時のスタック処理(被付与者)
+  Game_Action.prototype.stackStateApply = function(target, effect) {
+    const stackStateTraits = this.subject().getStackStateTrait("StackStateApply");
+    Object.entries(stackStateTraits).forEach(([gainStateId, stackDataArray]) => {
+      const stackValue = stackDataArray[0]; // スタック増加値
+      const requiredState = stackDataArray.length > 1 ? stackDataArray[1] : null; // ステートID (省略可能)
+      
+      if(!requiredState || Number.isInteger(requiredState)) {
+        if (matchStateId(this.subject(), requiredState, effect)) {
+          target.gainStack(Number(gainStateId), Number(stackValue));
+        }
+      } else if (isCategoryStateEnabled() && isCategoryState(this.subject(), requiredState, effect)) {
+        target.gainStack(Number(gainStateId), Number(stackValue));
+      }
+    });
+  };
+
+  // ステート付与時のスタック処理（付与者）
+  Game_Action.prototype.stackStateInfect = function(effect) {
+    const stackStateTraits = this.subject().getStackStateTrait("StackStateInfect");
+    Object.entries(stackStateTraits).forEach(([gainStateId, stackDataArray]) => {
+      const stackValue = stackDataArray[0]; // スタック増加値
+      const requiredState = stackDataArray.length > 1 ? stackDataArray[1] : null; // ステートID (省略可能)
+      
+      if(!requiredState || Number.isInteger(requiredState)) {
+        if (matchStateId(this.subject(), requiredState, effect)) {
+          this.subject().gainStack(Number(gainStateId), Number(stackValue));
+        }
+      } else if (isCategoryStateEnabled() && isCategoryState(this.subject(), requiredState, effect)) {
+        this.subject().gainStack(Number(gainStateId), Number(stackValue));
+      }
+    });
+  };
+
+  // ステート抵抗時のスタック処理
+  Game_Action.prototype.itemEffectAddStackResist = function(target, effect) {
+    const stackStateTraits = target.getStackStateTrait("StackStateResist");
+    Object.entries(stackStateTraits).forEach(([gainStateId, stackDataArray]) => {
+      const stackValue = stackDataArray[0]; // スタック増加値
+      const requiredState = stackDataArray.length > 1 ? stackDataArray[1] : null; // ステートID (省略可能)
+
+      if(!requiredState || Number.isInteger(requiredState)) {
+        if (matchStateId(this.subject(), requiredState, effect)) {
+          target.gainStack(Number(gainStateId), Number(stackValue));
+        }
+      } else if(isCategoryStateEnabled() && isCategoryState(this.subject(), requiredState, effect)) {
+        target.gainStack(Number(gainStateId), Number(stackValue));
+      }
+    });
+  };
+
   // ステートIDの判定
   function matchStateId(subject, requiredStateId, effect) {
     if (requiredStateId === null || requiredStateId === undefined) {
       return true;
     }
+    // 通常攻撃の場合 攻撃ステートを参照する
     if(effect.dataId == 0) {
       const targetArray = subject.attackStates();
       return targetArray.includes(requiredStateId);
@@ -1454,17 +1557,19 @@ KEN.StackState = {
     return effect.dataId == requiredStateId;
   }
 
-  Game_Action.prototype.itemEffectAddStackWithState = function(target, effect){
-    const stackStateTraits = this.subject().getStackStateTrait("StackStateApply");
-    Object.entries(stackStateTraits).forEach(([gainStateId, stackDataArray]) => {
-      const stackValue = stackDataArray[0]; // スタック増加値
-      const requiredStateId = stackDataArray.length > 1 ? stackDataArray[1] : null; // ステートID (省略可能)
-
-      if (matchStateId(this.subject(), requiredStateId, effect)) {
-        target.gainStack(Number(gainStateId), Number(stackValue));
+  function isCategoryState(subject, categoryName, effect) {
+    if (categoryName === null || categoryName === undefined) {
+      return false;
+    }
+    // 通常攻撃の場合 攻撃ステートを参照する
+    if(effect.dataId == 0) {
+      for(const stateId of subject.attackStates()) {
+        if(CategoryStateManager.categoryOf(stateId) == categoryName) return true;
       }
-    });
-  };
+    } else {
+      return CategoryStateManager.categoryOf(effect.dataId) == categoryName;
+    }
+  }
 
   // 会心時
   Game_Action.prototype.applyStackCritical = function(target) {
@@ -1492,15 +1597,15 @@ KEN.StackState = {
   const _BattleManager_invokeNormalAction = BattleManager.invokeNormalAction;
   BattleManager.invokeNormalAction = function(subject, target) {
     _BattleManager_invokeNormalAction.call(this, subject, target);
-    this.processOwnEffect(subject);
+    this.processOwnEffect(subject, target);
     this.processEvasion(subject, target);
   };
 
   // 自分自身へのエフェクト処理
-  BattleManager.processOwnEffect = function(subject) {
+  BattleManager.processOwnEffect = function(subject, target) {
     const action = this._action;
     action.applyStackStateOwn();
-    this._logWindow.displayStackEffectOwn(subject);
+    this._logWindow.displayStackEffectOwn(subject, target);
   };
 
   // 反撃時
@@ -1572,8 +1677,9 @@ KEN.StackState = {
   //-----------------------------------------------------------------------------
   // Window_BattleLog
   //-----------------------------------------------------------------------------
-  Window_BattleLog.prototype.displayStackEffectOwn = function(subject) {
-    if (subject.result().isStatusAffected()) {
+  Window_BattleLog.prototype.displayStackEffectOwn = function(subject, target) {
+    if (subject !== target && subject.result().isStatusAffected()) {
+      console.log("ownEffect");
       this.push("pushBaseLine");
       this.displayChangedStates(subject);
       this.displayChangedBuffs(subject);
