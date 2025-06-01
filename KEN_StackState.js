@@ -5,6 +5,7 @@
  http://opensource.org/licenses/mit-license.php
 ----------------------------------------------------------------------------
  Version
+ 1.0.9 2025/06/01 会心時にスタックを増減するスキル機能を追加
  1.0.8 2025/05/15 ステート抵抗時・付与時にスタックを増減する機能追加
                   メッセージログが二重に出力される不具合修正
                   KEN_CategoryState.js連携に対応
@@ -27,7 +28,7 @@
 */
 /*:
  * @target MZ
- * @plugindesc 累積ステートプラグイン (v1.0.8)
+ * @plugindesc 累積ステートプラグイン (v1.0.9)
  * @author KEN
  * @url https://raw.githubusercontent.com/t-kendama/RPGMakerMZ/refs/heads/master/KEN_StackState.js
  * 
@@ -198,8 +199,10 @@
  * TP増加時スタックが増減します。
  * 
  * <StackCritical[ステートID]:スタック増減値>
- * 記述欄：武器・防具・ステート
+ * 記述欄：武器・防具・ステート・スキル
  * 会心攻撃を行った時にスタックが増減します。
+ * ※スキルにタグを設定した場合、そのスキルで会心が
+ * 発生した時にスタックが増減します。
  * 
  * <StackEvaded[ステートID]:スタック増減値>
  * 記述欄：武器・防具・ステート
@@ -637,6 +640,29 @@ KEN.StackState = {
   function isCategoryStateEnabled() {
     return typeof KEN !== "undefined" && typeof KEN.CategoryState !== "undefined";
   }
+
+
+  const GetStackEffectItem = function(item, trait) {
+    const escapedTrait = escapeRegExp(trait); // 特殊文字をエスケープ
+    const regex = new RegExp("^" + escapedTrait + "(\\d+)$");
+    let traits = {};
+
+    Object.entries(item.meta).forEach(([key, value]) => {
+        const match = key.match(regex);
+        if (match) {
+            const stateId = parseInt(match[1], 10); // ステートIDを取得
+            // カンマで区切られた値を配列として格納
+            const values = value.split(",").map(v => {
+              const trimmed = v.trim();
+              return isNaN(Number(trimmed)) ? trimmed : Number(trimmed);
+            });
+            traits[stateId] = traits[stateId] || []; // 配列を初期化
+            traits[stateId].push(...values); // 配列に値を追加
+        }
+    });
+
+    return traits;
+  };
 
   //-----------------------------------------------------------------------------
   // Stack_State
@@ -1579,6 +1605,11 @@ KEN.StackState = {
       Object.entries(stackStateTraits).forEach(([key, value]) => {        
         this.subject().gainStack(Number(key), Number(value));
       });
+
+      const stackItemTraits = GetStackEffectItem(this.item(), "StackCritical");
+      Object.entries(stackItemTraits).forEach(([key, value]) => {
+        this.subject().gainStack(Number(key), Number(value));
+      });
     }
   };
 
@@ -1679,7 +1710,6 @@ KEN.StackState = {
   //-----------------------------------------------------------------------------
   Window_BattleLog.prototype.displayStackEffectOwn = function(subject, target) {
     if (subject !== target && subject.result().isStatusAffected()) {
-      console.log("ownEffect");
       this.push("pushBaseLine");
       this.displayChangedStates(subject);
       this.displayChangedBuffs(subject);
