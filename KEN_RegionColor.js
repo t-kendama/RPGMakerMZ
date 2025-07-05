@@ -57,7 +57,7 @@
  * @type combo
  * @desc 色の設定（例．rgb(255,0,0)）
  * @text 色
- * @option #FF0000
+ * @default rgb(255,0,0)
  * @option red
  * @option blue
  * @option green
@@ -66,7 +66,7 @@
  * @option magenta
  * @option black
  * @option white
- * @default #FF0000
+ * @default rgb(255,0,0)
  *
  * @arg alpha
  * @type number
@@ -122,7 +122,7 @@
  * @type combo
  * @text 色
  * @desc 色の設定（例．rgb(255,0,0)）
- * @default #FF0000
+ * @default rgb(255,0,0)
  * @option red
  * @option blue
  * @option green
@@ -131,7 +131,7 @@
  * @option magenta
  * @option black
  * @option white
- * @default red
+ * @default rgb(255,0,0)
  *
  * @param alpha
  * @type number
