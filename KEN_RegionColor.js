@@ -7,7 +7,7 @@
  http://opensource.org/licenses/mit-license.php
 ----------------------------------------------------------------------------
  Version
- 1.0.0 2025/06/30 初版
+ 1.0.0 2025/07/05 初版
 ----------------------------------------------------------------------------
 */
 /*:
@@ -28,7 +28,18 @@
  * @param DefaultRegionColors
  * @text デフォルトのリージョン色
  * @type struct<RegionColor>[]
+ * @desc マップ読み込み時に描画するリージョン色です
  * @default []
+ * 
+ * @param RegionLayer
+ * @text リージョンレイヤー位置
+ * @desc リージョン色を描画する位置を設定します。
+ * @type select
+ * @option キャラクターより下
+ * @value 3
+ * @option キャラクター・上層タイルより上
+ * @value 4
+ * @default 3
  *
  * @command setRegionColor
  * @text リージョン色を設定
@@ -152,6 +163,7 @@
 const pluginName = "KEN_RegionColor";
 const parameters = PluginManager.parameters(pluginName);
 const defaultColors = JSON.parse(parameters.DefaultRegionColors || "[]").map(str => JSON.parse(str));
+const regionLayer = Number(parameters["RegionLayer"] || 3);
 
 PluginManager.registerCommand(pluginName, "setRegionColor", args => {
     const regionId = Number(args.regionId);
@@ -251,15 +263,14 @@ Spriteset_Map.prototype.createLowerLayer = function() {
 };
 
 Spriteset_Map.prototype.createRegionOverlay = function() {
-    const width = $gameMap.width() * $gameMap.tileWidth();
-    const height = $gameMap.height() * $gameMap.tileHeight();
+    const width = Graphics.width + $gameMap.tileWidth() * 2;
+    const height = Graphics.height + $gameMap.tileHeight() * 2;
 
-    this._regionOverlaySprite = new Sprite();
     this._regionOverlayBitmap = new Bitmap(width, height);
-    this._regionOverlaySprite.bitmap = this._regionOverlayBitmap;
+    this._regionOverlaySprite = new Sprite(this._regionOverlayBitmap);
+    this._regionOverlaySprite.z = regionLayer;
 
-    const index = this._tilemap.children.indexOf(this._tilemap._lowerLayer);
-    this._tilemap.addChildAt(this._regionOverlaySprite, index + 1);
+    this._tilemap.addChild(this._regionOverlaySprite);
 };
 
 Spriteset_Map.prototype.getBlinkAlpha = function(baseAlpha, blink) {
