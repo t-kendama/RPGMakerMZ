@@ -171,12 +171,12 @@
 
 [ダウンロード](https://github.com/t-kendama/RPGMakerMZ/blob/master/KEN_RegionColor.js) 
 
-* 概要
-マップのリージョンに対して色を描画します。
+* 概要  
+マップのリージョンに対して色を描画します。  
 ・プラグインパラメータまたはプラグインコマンドで設定  
-・点滅またはフラッシュアニメーション機能
+・点滅またはフラッシュアニメーション機能  
 
-![TermHelp01](https://github.com/t-kendama/RPGMakerMZ/blob/master/images/KEN_RegionColor01.png)
+![RegionColor](https://github.com/t-kendama/RPGMakerMZ/blob/master/images/RegionColor01.png)
 
 ## 規約
 [MITライセンス](https://github.com/t-kendama/RPGMakerMZ/tree/main/LICENSE)に準拠します。
