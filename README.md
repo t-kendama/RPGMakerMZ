@@ -17,6 +17,7 @@
 | KEN_PartyHpCostSkill.js | パーティメンバーHPを消費するスキル | [DL](https://github.com/t-kendama/RPGMakerMZ/blob/master/KEN_PartyHpCostSkill.js) |
 | KEN_TermHelpWindow.js | 用語ヘルプウィンドウ | [DL](https://github.com/t-kendama/RPGMakerMZ/blob/master/KEN_TermHelpWindow.js) |
 | KEN_CategoryState.js | ステートのカテゴリを設定します | [DL](https://github.com/t-kendama/RPGMakerMZ/blob/master/KEN_CategoryState.js) |
+| KEN_RegionColor.js | ステートのカテゴリを設定します | [DL](https://github.com/t-kendama/RPGMakerMZ/blob/master/KEN_RegionColor.js) |
 
 ## プラグイン説明
 
@@ -164,7 +165,18 @@
 ステートにカテゴリを定義し、カテゴリ単位のステート解除が可能になります。  
 ・スキル・アイテムでカテゴリごとのステート解除ができる 
 ・カテゴリに属するステートを数を指定して解除  
-・優先度を指定して解除順を制御  
+・優先度を指定して解除順を制御
+
+### KEN_RegionColor.js
+
+[ダウンロード](https://github.com/t-kendama/RPGMakerMZ/blob/master/KEN_RegionColor.js) 
+
+* 概要
+マップのリージョンに対して色を描画します。
+・プラグインパラメータまたはプラグインコマンドで設定  
+・点滅またはフラッシュアニメーション機能
+
+![TermHelp01](https://github.com/t-kendama/RPGMakerMZ/blob/master/images/KEN_RegionColor01.png)
 
 ## 規約
 [MITライセンス](https://github.com/t-kendama/RPGMakerMZ/tree/main/LICENSE)に準拠します。
