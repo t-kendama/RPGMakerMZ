@@ -17,7 +17,7 @@
 | KEN_PartyHpCostSkill.js | パーティメンバーHPを消費するスキル | [DL](https://github.com/t-kendama/RPGMakerMZ/blob/master/KEN_PartyHpCostSkill.js) |
 | KEN_TermHelpWindow.js | 用語ヘルプウィンドウ | [DL](https://github.com/t-kendama/RPGMakerMZ/blob/master/KEN_TermHelpWindow.js) |
 | KEN_CategoryState.js | ステートのカテゴリを設定します | [DL](https://github.com/t-kendama/RPGMakerMZ/blob/master/KEN_CategoryState.js) |
-| KEN_RegionColor.js | ステートのカテゴリを設定します | [DL](https://github.com/t-kendama/RPGMakerMZ/blob/master/KEN_RegionColor.js) |
+| KEN_RegionColor.js | マップ上のリージョンに色を描画します | [DL](https://github.com/t-kendama/RPGMakerMZ/blob/master/KEN_RegionColor.js) |
 
 ## プラグイン説明
 
