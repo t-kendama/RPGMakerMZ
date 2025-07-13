@@ -181,7 +181,7 @@
 ## 規約
 [MITライセンス](https://github.com/t-kendama/RPGMakerMZ/tree/main/LICENSE)に準拠します。
 
-* もうちょっと詳しく  
+### もうちょっと詳しく  
 本プラグインはどなたでも自由にご利用いただけます。  
 作者への連絡は不要です。クレジット表記の義務もありません。  
 
@@ -189,6 +189,6 @@
 ※ Readmeなど、配布物のドキュメントに何らかの形で表記していればOK
 
 ## 作者連絡先
-プラグインを作った人： KEN
+プラグインを作った人： KEN  
 (X): https://x.com/t_kendama  
 (Github): https://github.com/t-kendama/
