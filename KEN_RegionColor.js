@@ -216,7 +216,6 @@ DataManager.makeSaveContents = function() {
 const _Game_Map_initialize = Game_Map.prototype.initialize;
 Game_Map.prototype.initialize = function() {
     _Game_Map_initialize.call(this);
-    console.log(this._regionColorOverlay)
 
     if (!this._regionColorOverlay) {
         this._regionColorOverlay = new Map();
@@ -281,7 +280,6 @@ Spriteset_Map.prototype.getBlinkAlpha = function(baseAlpha, blink) {
 };
 
 Spriteset_Map.prototype.updateRegionOverlay = function() {
-    console.log($gameMap._regionColorOverlay)
     if (!this._regionOverlaySprite) return;
 
     const tileWidth = $gameMap.tileWidth();
@@ -384,3 +382,4 @@ Spriteset_Map.prototype.update = function() {
 };
 
 })();
+
