@@ -1564,7 +1564,7 @@ KEN.StackState = {
     Object.entries(stackStateTraits).forEach(([gainStateId, stackDataArray]) => {
       const stackValue = stackDataArray[0]; // スタック増加値
       const requiredState = stackDataArray.length > 1 ? stackDataArray[1] : null; // ステートID (省略可能)
-      console.log(isCategoryStateEnabled())
+      
       if(!requiredState || Number.isInteger(requiredState)) {
         if (matchStateId(this.subject(), requiredState, effect)) {
           this.subject().gainStack(Number(gainStateId), Number(stackValue));
@@ -1646,12 +1646,6 @@ KEN.StackState = {
   //-----------------------------------------------------------------------------
   // BattleManager
   //-----------------------------------------------------------------------------
-  const _BattleManager_startBattle = BattleManager.startBattle;
-  BattleManager.startBattle = function() {
-    $gameTemp._allowStatePopupPlcmKe = true
-    _BattleManager_startBattle.call(this);
-  };
-
   // 通常アクション
   const _BattleManager_invokeNormalAction = BattleManager.invokeNormalAction;
   BattleManager.invokeNormalAction = function(subject, target) {
