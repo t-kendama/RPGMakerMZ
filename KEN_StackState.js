@@ -5,6 +5,8 @@
  http://opensource.org/licenses/mit-license.php
 ----------------------------------------------------------------------------
  Version
+ 1.1.1 2026/02/12 StackStateInflictタグ効果が正常に動作していなかった不具合修正
+ 1.1.0 2025/06/06 職業欄のメモ機能を追加
  1.0.9 2025/06/01 会心時にスタックを増減するスキル機能を追加
  1.0.8 2025/05/15 ステート抵抗時・付与時にスタックを増減する機能追加
                   メッセージログが二重に出力される不具合修正
@@ -28,7 +30,7 @@
 */
 /*:
  * @target MZ
- * @plugindesc 累積ステートプラグイン (v1.0.9)
+ * @plugindesc 累積ステートプラグイン (v1.1.1)
  * @author KEN
  * @url https://raw.githubusercontent.com/t-kendama/RPGMakerMZ/refs/heads/master/KEN_StackState.js
  * 
@@ -1189,6 +1191,11 @@ KEN.StackState = {
     return baseValue;
   };
 
+  // バフ量の取得
+  Game_BattlerBase.prototype.paramBuffAmount = function(paramId) {
+    return this.param(paramId) - this.paramBase(paramId) - this.paramPlus(paramId);
+  };
+
   //-----------------------------------------------------------------------------
   // Game_Battler
   //-----------------------------------------------------------------------------
@@ -1203,41 +1210,56 @@ KEN.StackState = {
     const regex = new RegExp("^" + escapedTrait + "(\\d+)$");
     let traits = {};
 
-    // 装備の処理
     if (this.isActor()) {
-        for (const item of this.equips()) {
-            if (!item) continue;
-            Object.entries(item.meta).forEach(([key, value]) => {
-                const match = key.match(regex);
-                if (match) {
-                    const stateId = parseInt(match[1], 10); // ステートIDを取得
-                    // カンマで区切られた値を配列として格納
-                    const values = value.split(",").map(v => {
-                      const trimmed = v.trim();
-                      return isNaN(Number(trimmed)) ? trimmed : Number(trimmed);
-                    });
-                    traits[stateId] = traits[stateId] || []; // 配列を初期化
-                    traits[stateId].push(...values); // 配列に値を追加
-                }
+      // 装備の処理
+      for (const item of this.equips()) {
+        if (!item) continue;
+        Object.entries(item.meta).forEach(([key, value]) => {
+          const match = key.match(regex);
+          if (match) {
+            const stateId = parseInt(match[1], 10); // ステートIDを取得
+            // カンマで区切られた値を配列として格納
+            const values = value.split(",").map(v => {
+              const trimmed = v.trim();
+              return isNaN(Number(trimmed)) ? trimmed : Number(trimmed);
             });
+            traits[stateId] = traits[stateId] || []; // 配列を初期化
+            traits[stateId].push(...values); // 配列に値を追加
+          }
+        });
+      }
+      // 職業欄の確認
+      const currentClass = this.currentClass();
+      Object.entries(currentClass.meta).forEach(([key, value]) => {
+        const match = key.match(regex);
+        if (match) {
+          const stateId = parseInt(match[1], 10); // ステートIDを取得
+          // カンマで区切られた値を配列として格納
+          const values = value.split(",").map(v => {
+            const trimmed = v.trim();
+            return isNaN(Number(trimmed)) ? trimmed : Number(trimmed);
+          });
+          traits[stateId] = traits[stateId] || []; // 配列を初期化
+          traits[stateId].push(...values); // 配列に値を追加
         }
+      });
     }
 
     // ステートの処理
     for (const state of this.states()) {
-        Object.entries($dataStates[state.id].meta).forEach(([key, value]) => {
-            const match = key.match(regex);
-            if (match) {
-                const stateId = parseInt(match[1], 10); // ステートIDを取得
-                // カンマで区切られた値を配列として格納
-                const values = value.split(",").map(v => {
-                  const trimmed = v.trim();
-                  return isNaN(Number(trimmed)) ? trimmed : Number(trimmed);
-                });
-                traits[stateId] = traits[stateId] || []; // 配列を初期化
-                traits[stateId].push(...values); // 配列に値を追加
-            }
-        });
+      Object.entries($dataStates[state.id].meta).forEach(([key, value]) => {
+        const match = key.match(regex);
+        if (match) {
+          const stateId = parseInt(match[1], 10); // ステートIDを取得
+          // カンマで区切られた値を配列として格納
+          const values = value.split(",").map(v => {
+            const trimmed = v.trim();
+            return isNaN(Number(trimmed)) ? trimmed : Number(trimmed);
+          });
+          traits[stateId] = traits[stateId] || []; // 配列を初期化
+          traits[stateId].push(...values); // 配列に値を追加
+        }
+      });
     }
 
     return traits;
@@ -1491,7 +1513,7 @@ KEN.StackState = {
     // ステート付与判定
     if (isItemEffectStateMatched(this.subject(), newlyAddedStates, effect)) {
       this.stackStateApply(target, effect);
-      this.stackStateInfect(effect);
+      this.stackStateInflict(effect);
     }
     // ステート抵抗判定
     if (isItemEffectFailed(target, effect)) {
@@ -1537,12 +1559,12 @@ KEN.StackState = {
   };
 
   // ステート付与時のスタック処理（付与者）
-  Game_Action.prototype.stackStateInfect = function(effect) {
-    const stackStateTraits = this.subject().getStackStateTrait("StackStateInfect");
+  Game_Action.prototype.stackStateInflict = function(effect) {
+    const stackStateTraits = this.subject().getStackStateTrait("StackStateInflict");
     Object.entries(stackStateTraits).forEach(([gainStateId, stackDataArray]) => {
       const stackValue = stackDataArray[0]; // スタック増加値
       const requiredState = stackDataArray.length > 1 ? stackDataArray[1] : null; // ステートID (省略可能)
-      
+      console.log(isCategoryStateEnabled())
       if(!requiredState || Number.isInteger(requiredState)) {
         if (matchStateId(this.subject(), requiredState, effect)) {
           this.subject().gainStack(Number(gainStateId), Number(stackValue));
@@ -1624,6 +1646,12 @@ KEN.StackState = {
   //-----------------------------------------------------------------------------
   // BattleManager
   //-----------------------------------------------------------------------------
+  const _BattleManager_startBattle = BattleManager.startBattle;
+  BattleManager.startBattle = function() {
+    $gameTemp._allowStatePopupPlcmKe = true
+    _BattleManager_startBattle.call(this);
+  };
+
   // 通常アクション
   const _BattleManager_invokeNormalAction = BattleManager.invokeNormalAction;
   BattleManager.invokeNormalAction = function(subject, target) {
