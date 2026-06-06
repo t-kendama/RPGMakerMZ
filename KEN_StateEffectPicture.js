@@ -128,13 +128,11 @@
  * @text Y座標の原点
  * @desc 画像を表示する基準点を指定します。X座標は中央固定です。
  * @type select
- * @option 上
- * @value top
  * @option 中央
  * @value center
  * @option 下
  * @value bottom
- * @default top
+ * @default center
  * @parent Drawing
  *
  * @param OffsetX
@@ -785,6 +783,14 @@ Sprite_BattleStateEffect.prototype.updateEffect = function() {
     this.visible = true;
 
     const setting = this._setting;
+
+    // origin に応じて anchor.y を切り替え
+    switch (setting.origin) {
+        case "center": this.anchor.y = 0.5; break;
+        case "bottom": this.anchor.y = 1.0; break;
+        default:       this.anchor.y = 0.5; break;
+    }
+
     const base = this.basePosition(setting);
 
     if (this.isAnimationMode()) {
@@ -916,22 +922,21 @@ Sprite_BattleStateEffect.prototype.basePosition = function(setting) {
         const rect = this._baseRect;
         return {
             x: rect.x + rect.width / 2,
-            y: this.originY(rect.y, rect.height, setting.origin)
+            y: this.originY(rect.y + rect.height, rect.height, setting.origin)
         };
     } else {
         return {
             x: 0,
-            y: this.originY(-this._baseHeight, this._baseHeight, setting.origin)
+            y: this.originY(0, this._baseHeight, setting.origin)
         };
     }
 };
 
 Sprite_BattleStateEffect.prototype.originY = function(y, height, origin) {
     switch (origin) {
-        case "top": return y;
-        case "center": return y + height / 2;
-        case "bottom": return y + height;
-        default: return y;
+        case "center": return y - height / 2;
+        case "bottom": return y;
+        default:       return y - height / 2;
     }
 };
 
