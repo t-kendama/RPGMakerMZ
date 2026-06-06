@@ -625,7 +625,7 @@ function parseStateEffect(value) {
         mode: String(data.Mode || "effect"),
         displayCondition: String(data.DisplayCondition || "always"),
         displayTarget: String(data.DisplayTarget || "battler"),
-        origin: String(data.Origin || "top"),
+        origin: String(data.Origin || "center"),
         offsetX: toNumber(data.OffsetX, 0),
         offsetY: toNumber(data.OffsetY, 0),
         blendMode: toNumber(data.BlendMode, 0),
