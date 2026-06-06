@@ -14,12 +14,6 @@
  * @url https://raw.githubusercontent.com/t-kendama/RPGMakerMZ/refs/heads/master/KEN_StateEffectPicture.js
  * @author KEN
  *
- * @param ShowOnStatusWindow
- * @text ステータスウィンドウに表示
- * @desc アクターのステータスウィンドウ上にもエフェクト画像を表示します。
- * @type boolean
- * @default true
- *
  * @param StateEffects
  * @text ステートエフェクト設定
  * @desc ステートごとの画像・表示位置・演出設定です。
@@ -39,7 +33,7 @@
  *
  * 2. 戦闘ステータスウィンドウ
  *    アクターの顔グラフィック付近に表示します。
- *    プラグインパラメータでON／OFFが可能です。
+ *    ステートごとに表示先を指定できます。
  * 
  * 【表示モード】
  * 以下２つの表示モードがあります。表示モードは併用できません。
@@ -179,6 +173,19 @@
  * @option スクリーン
  * @value 3
  * @default 0
+ * @parent Drawing
+ *
+ * @param DisplayTarget
+ * @text 表示先
+ * @desc 画像の表示先を指定します。ステータスウィンドウへの表示はアクターのみ有効です。
+ * @type select
+ * @option バトラーのみ
+ * @value battler
+ * @option ステータスウィンドウのみ
+ * @value status
+ * @option 両方
+ * @value both
+ * @default battler
  * @parent Drawing
  *
  * @param Effect
@@ -507,8 +514,6 @@
 const pluginName = "KEN_StateEffectPicture";
 const parameters = PluginManager.parameters(pluginName);
 
-const showOnStatusWindow = parameters.ShowOnStatusWindow !== "false";
-
 function parseJson(value, defaultValue) {
     if (value === undefined || value === null || value === "") return defaultValue;
     try { return JSON.parse(value); } catch (e) { return defaultValue; }
@@ -621,6 +626,7 @@ function parseStateEffect(value) {
         layer: toNumber(data.Layer !== undefined ? data.Layer : data.Priority, 0),
         mode: String(data.Mode || "effect"),
         displayCondition: String(data.DisplayCondition || "always"),
+        displayTarget: String(data.DisplayTarget || "battler"),
         origin: String(data.Origin || "top"),
         offsetX: toNumber(data.OffsetX, 0),
         offsetY: toNumber(data.OffsetY, 0),
@@ -981,7 +987,7 @@ window.Sprite_BattleStateEffect = Sprite_BattleStateEffect;
 // 共通: 複数エフェクトスプライト更新
 //-----------------------------------------------------------------------------
 
-function updateStateEffectSpriteList(parent, sprites, battler, baseRect, baseWidth, baseHeight) {
+function updateStateEffectSpriteList(parent, sprites, battler, baseRect, baseWidth, baseHeight, displayContext) {
     const settings = BattleStateEffectManager.findSettings(battler);
 
     while (sprites.length < settings.length) {
@@ -996,6 +1002,16 @@ function updateStateEffectSpriteList(parent, sprites, battler, baseRect, baseWid
         const setting = settings[i];
 
         if (!setting) {
+            sprite.clearEffect();
+            continue;
+        }
+
+        // displayContext に応じて表示先フィルタリング
+        if (displayContext === "battler" && setting.displayTarget === "status") {
+            sprite.clearEffect();
+            continue;
+        }
+        if (displayContext === "status" && setting.displayTarget === "battler") {
             sprite.clearEffect();
             continue;
         }
@@ -1068,7 +1084,7 @@ Sprite_Battler.prototype.updateBattleStateEffectSprites = function() {
     const width = target.width || this.width || 0;
     const height = target.height || this.height || 0;
 
-    updateStateEffectSpriteList(this, sprites, this._battler, null, width, height);
+    updateStateEffectSpriteList(this, sprites, this._battler, null, width, height, "battler");
 };
 
 //-----------------------------------------------------------------------------
@@ -1103,20 +1119,15 @@ Window_BattleStatus.prototype.updateBattleStateEffectSprites = function() {
 
     for (let i = 0; i < this._battleStateEffectSprites.length; i++) {
         const sprites = this._battleStateEffectSprites[i];
-
-        if (!showOnStatusWindow) {
-            clearStateEffectSpriteList(sprites);
-            continue;
-        }
-
         const actor = this.actor(i);
+
         if (!actor) {
             clearStateEffectSpriteList(sprites);
             continue;
         }
 
         const rect = this.stateEffectFaceRect(i);
-        updateStateEffectSpriteList(this, sprites, actor, rect, 0, 0);
+        updateStateEffectSpriteList(this, sprites, actor, rect, 0, 0, "status");
     }
 };
 
