@@ -41,6 +41,8 @@
 ステートが付与されているバトラーに画像エフェクトを表示します。  
 複数の画像を並べることで擬似的にアニメーションのような描画も可能です。
 
+![StateEffectPicture01](https://github.com/t-kendama/RPGMakerMZ/blob/master/images/StateEffectPicture01.png)
+
 ### KEN_DamageCutShield.js
 
 [ダウンロード](https://github.com/t-kendama/RPGMakerMZ/blob/master/KEN_DamageCutShield.js) 
