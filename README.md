@@ -43,6 +43,9 @@
 
 ![StateEffectPicture01](https://github.com/t-kendama/RPGMakerMZ/blob/master/images/StateEffectPicture01.png)
 
+* お借りした素材  
+[ぴぽや倉庫](https://github.com/t-kendama/RPGMakerMZ/blob/master/KEN_StateEffectPicture.js](https://pipoya.net/sozai/))
+
 ### KEN_DamageCutShield.js
 
 [ダウンロード](https://github.com/t-kendama/RPGMakerMZ/blob/master/KEN_DamageCutShield.js) 
