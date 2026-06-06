@@ -9,6 +9,7 @@
 | プラグイン名  | 説明 | リンク |
 | ------------- | ------------- | ------------- |
 | KEN_BattleStateInformation.js | 戦闘中にステート一覧やバトラーの情報を表示 | [DL](https://github.com/t-kendama/RPGMakerMZ/blob/master/KEN_BattleStateInformation.js) |
+| KEN_StateEffectPicture.js | ステート中のバトラーに画像エフェクトを表示 | [DL](https://github.com/t-kendama/RPGMakerMZ/blob/master/KEN_StateEffectPicture.js) |
 | KEN_DamageCutShield.js| ダメージカットを行うシールドを提供します  | [DL](https://github.com/t-kendama/RPGMakerMZ/blob/master/KEN_DamageCutShield.js) |
 | KEN_ForcedTargetState.js | ターゲットを強制するステート  | [DL](https://github.com/t-kendama/RPGMakerMZ/blob/master/KEN_ForcedTargetState.js) |
 | KEN_CustomizeGauge.js | アクターごとのパラメータ描画をカスタマイズ| [DL](https://github.com/t-kendama/RPGMakerMZ/blob/master/KEN_CustomizeGauge.js) |
@@ -30,6 +31,15 @@
 ステートの内容や任意のステータス情報を表示することが可能です。
 
 ![BattleStateInformation01](https://github.com/t-kendama/RPGMakerMZ/blob/master/images/BattleStateInformation_001.png)
+
+### KEN_StateEffectPicture.js
+
+[ダウンロード](https://github.com/t-kendama/RPGMakerMZ/blob/master/KEN_StateEffectPicture.js) 
+
+#### 概要
+
+ステートが付与されているバトラーに画像エフェクトを表示します。  
+複数の画像を並べることで擬似的にアニメーションのような描画も可能です。
 
 ### KEN_DamageCutShield.js
 
