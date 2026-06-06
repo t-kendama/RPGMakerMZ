@@ -11,7 +11,7 @@
 /*:
  * @target MZ
  * @plugindesc ステート中のバトラーに画像エフェクトを表示 v1.0.0
- * @url 
+ * @url https://raw.githubusercontent.com/t-kendama/RPGMakerMZ/refs/heads/master/KEN_StateEffectPicture.js
  * @author KEN
  *
  * @param ShowOnStatusWindow
