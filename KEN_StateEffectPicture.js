@@ -51,6 +51,14 @@
  * 本プラグインはプラグインパラメータ上で設定します。
  * 設定項目の詳細はプラグインパラメータの説明文を参照下さい。
  * 
+ * 【注意：エネミーの色相設定】
+ * データベースでエネミーの色相を変化させた時、RGBの値が異なる色調変化（例：赤みを加えるなど）は、
+ * 意図した色と異なる見た目になる場合があります。
+ * 
+ * エネミーの色相を変化させる場合、色相変化を無効化するか
+ * 色相を変化させたアニメーション素材を用意してください。
+ * 
+ * 
  * -------------------------    細かい仕様    -------------------------
  * 
  * 複数ステートが該当する場合:
@@ -723,11 +731,6 @@ Sprite_BattleStateEffect.prototype.initialize = function() {
 
 Sprite_BattleStateEffect.prototype.setBattler = function(battler) {
     this._battler = battler || null;
-    if (battler && battler.isEnemy && battler.isEnemy()) {
-        this.setHue(-battler.battlerHue());
-    } else {
-        this.setHue(0);
-    }
 };
 
 Sprite_BattleStateEffect.prototype.setSetting = function(setting) {
@@ -1026,6 +1029,9 @@ function ensureStateEffectSprites(parent, sprites, count) {
         const sprite = new Sprite_BattleStateEffect();
         sprite.visible = false;
         parent.addChild(sprite);
+        if (parent._battlerHue) {
+            sprite.setHue(-parent._battlerHue);
+        }
         sprites.push(sprite);
     }
 }
