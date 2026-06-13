@@ -5,12 +5,13 @@
  http://opensource.org/licenses/mit-license.php
 ----------------------------------------------------------------------------
  Version
+ 1.0.1 2026/06/12 エネミーの色相を変更すると画像が連動して色が変わってしまう不具合修正
  1.0.0 2026/06/07 初版
 ----------------------------------------------------------------------------
 */
 /*:
  * @target MZ
- * @plugindesc ステート中のバトラーに画像エフェクトを表示 v1.0.0
+ * @plugindesc ステート中のバトラーに画像エフェクトを表示 v1.0.1
  * @url https://raw.githubusercontent.com/t-kendama/RPGMakerMZ/refs/heads/master/KEN_StateEffectPicture.js
  * @author KEN
  *
@@ -650,6 +651,7 @@ function BattleStateEffectManager() {
 
 BattleStateEffectManager.findSettings = function(battler) {
     if (!battler) return [];
+    if (battler._stateEffectSettingsCache) return battler._stateEffectSettingsCache;
 
     const matched = stateEffects.filter(setting => {
         if (!this.isTargetMatched(setting, battler)) return false;
@@ -666,10 +668,25 @@ BattleStateEffectManager.findSettings = function(battler) {
         }
     }
 
-    return Array.from(layerMap.values()).sort((a, b) => {
+    const result = Array.from(layerMap.values()).sort((a, b) => {
         if (a.layer !== b.layer) return a.layer - b.layer;
         return a.stateId - b.stateId;
     });
+
+    battler._stateEffectSettingsCache = result;
+    return result;
+};
+
+const _Game_BattlerBase_addNewState = Game_BattlerBase.prototype.addNewState;
+Game_BattlerBase.prototype.addNewState = function(stateId) {
+    _Game_BattlerBase_addNewState.call(this, stateId);
+    this._stateEffectSettingsCache = null;
+};
+
+const _Game_BattlerBase_eraseState = Game_BattlerBase.prototype.eraseState;
+Game_BattlerBase.prototype.eraseState = function(stateId) {
+    _Game_BattlerBase_eraseState.call(this, stateId);
+    this._stateEffectSettingsCache = null;
 };
 
 BattleStateEffectManager.isTargetMatched = function(setting, battler) {
@@ -706,6 +723,11 @@ Sprite_BattleStateEffect.prototype.initialize = function() {
 
 Sprite_BattleStateEffect.prototype.setBattler = function(battler) {
     this._battler = battler || null;
+    if (battler && battler.isEnemy && battler.isEnemy()) {
+        this.setHue(-battler.battlerHue());
+    } else {
+        this.setHue(0);
+    }
 };
 
 Sprite_BattleStateEffect.prototype.setSetting = function(setting) {
@@ -994,56 +1016,64 @@ window.Sprite_BattleStateEffect = Sprite_BattleStateEffect;
 
 function updateStateEffectSpriteList(parent, sprites, battler, baseRect, baseWidth, baseHeight, displayContext) {
     const settings = BattleStateEffectManager.findSettings(battler);
+    ensureStateEffectSprites(parent, sprites, settings.length);
+    const changed = applyStateEffectSettings(sprites, settings, battler, baseRect, baseWidth, baseHeight, displayContext);
+    if (changed) reorderStateEffectSprites(parent, sprites);
+}
 
-    while (sprites.length < settings.length) {
+function ensureStateEffectSprites(parent, sprites, count) {
+    while (sprites.length < count) {
         const sprite = new Sprite_BattleStateEffect();
         sprite.visible = false;
         parent.addChild(sprite);
         sprites.push(sprite);
     }
+}
+
+function applyStateEffectSettings(sprites, settings, battler, baseRect, baseWidth, baseHeight, displayContext) {
+    let changed = false;
 
     for (let i = 0; i < sprites.length; i++) {
         const sprite = sprites[i];
-        const setting = settings[i];
-
-        if (!setting) {
-            sprite.clearEffect();
-            continue;
-        }
+        const setting = settings[i] || null;
 
         // displayContext に応じて表示先フィルタリング
-        if (displayContext === "battler" && setting.displayTarget === "status") {
-            sprite.clearEffect();
-            continue;
-        }
-        if (displayContext === "status" && setting.displayTarget === "battler") {
+        const filtered = setting && (
+            (displayContext === "battler" && setting.displayTarget === "status") ||
+            (displayContext === "status"  && setting.displayTarget === "battler")
+        );
+
+        const effectiveSetting = (setting && !filtered) ? setting : null;
+
+        if (sprite._setting !== effectiveSetting) changed = true;
+
+        if (!effectiveSetting) {
             sprite.clearEffect();
             continue;
         }
 
         sprite.setBattler(battler);
-        sprite.setSetting(setting);
+        sprite.setSetting(effectiveSetting);
 
         if (baseRect) {
             sprite.setBaseRect(baseRect);
         } else {
             sprite.setBaseSize(baseWidth, baseHeight);
         }
-
-        sprite.z = setting.layer;
     }
 
-    sprites.sort((a, b) => {
-        const la = a._setting ? a._setting.layer : -Infinity;
-        const lb = b._setting ? b._setting.layer : -Infinity;
-        return la - lb;
-    });
+    return changed;
+}
 
-    for (const sprite of sprites) {
-        if (sprite.parent === parent) {
-            parent.addChild(sprite);
-        }
-    }
+function reorderStateEffectSprites(parent, sprites) {
+    sprites
+        .slice()
+        .sort((a, b) => {
+            const la = a._setting ? a._setting.layer : -Infinity;
+            const lb = b._setting ? b._setting.layer : -Infinity;
+            return la - lb;
+        })
+        .forEach(sprite => parent.addChild(sprite));
 }
 
 function clearStateEffectSpriteList(sprites) {
