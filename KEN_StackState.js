@@ -5,6 +5,7 @@
  http://opensource.org/licenses/mit-license.php
 ----------------------------------------------------------------------------
  Version
+ 1.1.3 2026/06/22 StackHpDamageInflict/StackMpDamageInflictタグ追加
  1.1.2 2026/06/22 スタック数の評価式に対応
  1.1.1 2026/02/12 StackStateInflictタグ効果が正常に動作していなかった不具合修正
  1.1.0 2025/06/06 職業欄のメモ機能を追加
@@ -31,7 +32,7 @@
 */
 /*:
  * @target MZ
- * @plugindesc 累積ステートプラグイン (v1.1.2)
+ * @plugindesc 累積ステートプラグイン (v1.1.3)
  * @author KEN
  * @url https://raw.githubusercontent.com/t-kendama/RPGMakerMZ/refs/heads/master/KEN_StackState.js
  * 
@@ -150,7 +151,19 @@
  * MPダメージを受けた時、攻撃を受けた対象のスタックが増減します。
  * 属性IDを指定すると、その属性IDダメージを受けた時のみスタックが増減します。
  * ダメージが0の場合、効果は発動しません。
- * 
+ *
+ * <StackHpDamageInflict[ステートID]:スタック増減値, 属性ID（省略可）>
+ * 記述欄：武器・防具・ステート
+ * HPダメージを与えた時、攻撃した側のスタックが増減します。
+ * 属性IDを指定すると、その属性IDを使用した時のみスタックが増減します。
+ * ダメージが0の場合、効果は発動しません。
+ *
+ * <StackMpDamageInflict[ステートID]:スタック増減値, 属性ID（省略可）>
+ * 記述欄：武器・防具・ステート
+ * MPダメージを与えた時、攻撃した側のスタックが増減します。
+ * 属性IDを指定すると、その属性IDを使用した時のみスタックが増減します。
+ * ダメージが0の場合、効果は発動しません。
+ *
  * <StackStateApply[ステートID]:スタック増減値, ステートID or カテゴリ名※(省略可)>
  * 記述欄：武器・防具・ステート
  * ステートを付与した時、攻撃対象のスタックが増減します。
@@ -1479,7 +1492,7 @@ KEN.StackState = {
         }
       });
 
-      // 与ダメージ時のスタック処理
+      // 与ダメージ時のスタック処理（対象）
       const stackStateTraitsAttack = this.subject().getStackStateTrait("StackHpDamageAttack");
       Object.entries(stackStateTraitsAttack).forEach(([stateId, stackDataArray]) => {
         const stackValue = stackDataArray[0]; // スタック増加値
@@ -1487,6 +1500,17 @@ KEN.StackState = {
 
         if (this.isHpDamageOrDrain() && matchElementId(elements, requiredElementId)) {
           target.gainStack(Number(stateId), Number(stackValue));
+        }
+      });
+
+      // 与ダメージ時のスタック処理（攻撃者自身）
+      const stackStateTraitsInflict = this.subject().getStackStateTrait("StackHpDamageInflict");
+      Object.entries(stackStateTraitsInflict).forEach(([stateId, stackDataArray]) => {
+        const stackValue = stackDataArray[0];
+        const requiredElementId = stackDataArray.length > 1 ? stackDataArray[1] : null;
+
+        if (this.isHpDamageOrDrain() && matchElementId(elements, requiredElementId)) {
+          this.subject().gainStack(Number(stateId), Number(stackValue));
         }
       });
     }
@@ -1509,7 +1533,7 @@ KEN.StackState = {
         }
       });
 
-      // 与ダメージ時のスタック処理
+      // 与ダメージ時のスタック処理（対象）
       const stackStateTraitsAttack = this.subject().getStackStateTrait("StackMpDamageAttack");
       Object.entries(stackStateTraitsAttack).forEach(([stateId, stackDataArray]) => {
         const stackValue = stackDataArray[0]; // スタック増加値
@@ -1517,6 +1541,17 @@ KEN.StackState = {
 
         if (this.isMpDamageOrDrain() && matchElementId(elementId, requiredElementId)) {
           target.gainStack(Number(stateId), Number(stackValue));
+        }
+      });
+
+      // 与ダメージ時のスタック処理（攻撃者自身）
+      const stackStateTraitsInflict = this.subject().getStackStateTrait("StackMpDamageInflict");
+      Object.entries(stackStateTraitsInflict).forEach(([stateId, stackDataArray]) => {
+        const stackValue = stackDataArray[0];
+        const requiredElementId = stackDataArray.length > 1 ? stackDataArray[1] : null;
+
+        if (this.isMpDamageOrDrain() && matchElementId(elementId, requiredElementId)) {
+          this.subject().gainStack(Number(stateId), Number(stackValue));
         }
       });
     }
