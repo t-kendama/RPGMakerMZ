@@ -5,6 +5,7 @@
  http://opensource.org/licenses/mit-license.php
 ----------------------------------------------------------------------------
  Version
+ 1.1.2 2026/06/22 スタック数の評価式に対応
  1.1.1 2026/02/12 StackStateInflictタグ効果が正常に動作していなかった不具合修正
  1.1.0 2025/06/06 職業欄のメモ機能を追加
  1.0.9 2025/06/01 会心時にスタックを増減するスキル機能を追加
@@ -30,7 +31,7 @@
 */
 /*:
  * @target MZ
- * @plugindesc 累積ステートプラグイン (v1.1.1)
+ * @plugindesc 累積ステートプラグイン (v1.1.2)
  * @author KEN
  * @url https://raw.githubusercontent.com/t-kendama/RPGMakerMZ/refs/heads/master/KEN_StackState.js
  * 
@@ -109,6 +110,10 @@
  * 記述欄：アイテム・スキル
  * このタグが設定されたアイテム・スキル使用者のスタックが増減します。
  * 
+ * 上級者向け：
+ * スタック増減値には評価式が使用可能です。
+ * <GainStack12: a.mat>
+ * 上記の式では、使用者の魔力を基準にスタックが増加します。
  * 
  * 【応用編】
  * 特定の条件下でスタックを増減させたい時の設定です。
@@ -1397,6 +1402,21 @@ KEN.StackState = {
     this.applyStackState(target);
   };
 
+  // GainStack値の評価（数値またはスクリプト）
+  Game_Action.prototype.evalGainStackValue = function(value, target) {
+    const num = parseInt(value, 10);
+    if (!isNaN(num) && String(num) === String(value).trim()) return num || 1;
+    try {
+      const a = this.subject();
+      const b = target;
+      const result = Math.floor(eval(value));
+      return isNaN(result) ? 1 : result;
+    } catch (e) {
+      console.warn("GainStack eval error:", e);
+      return 1;
+    }
+  };
+
   // ターゲットへのスタック処理
   Game_Action.prototype.applyStackState = function(target) {
     const item = this.item();
@@ -1407,7 +1427,7 @@ KEN.StackState = {
       const match = key.match(regex); // 正規表現でキーをチェック
       if (match) {
         const stateId = parseInt(match[1], 10); // 整数値を取得
-        const gainValue = parseInt(value, 10) != 0 ? parseInt(value, 10) : 1; 
+        const gainValue = this.evalGainStackValue(value, target);
         target.gainStack(stateId, gainValue);
         target.result().stackStates[stateId] = gainValue;
       }
@@ -1415,7 +1435,7 @@ KEN.StackState = {
   };
 
   // 自分自身のスタック処理
-  Game_Action.prototype.applyStackStateOwn = function(/*target*/) {    
+  Game_Action.prototype.applyStackStateOwn = function(/*target*/) {
     const battler = this.subject();
     const item = this.item();
     const regex = /^GainStackOwn(\d+)$/;
@@ -1424,7 +1444,7 @@ KEN.StackState = {
       const match = key.match(regex); // 正規表現でキーをチェック
       if (match) {
         const stateId = parseInt(match[1], 10); // 整数値を取得
-        const gainValue = parseInt(value, 10) != 0 ? parseInt(value, 10) : 1; 
+        const gainValue = this.evalGainStackValue(value, battler);
         battler.gainStack(stateId, gainValue);
         battler.result().stackStates[stateId] = gainValue;
       }
