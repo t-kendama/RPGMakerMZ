@@ -1410,10 +1410,10 @@ KEN.StackState = {
       const a = this.subject();
       const b = target;
       const result = Math.floor(eval(value));
-      return isNaN(result) ? 1 : result;
+      return isNaN(result) ? 0 : result;
     } catch (e) {
-      console.warn("GainStack eval error:", e);
-      return 1;
+      console.log("GainStack eval error:", e);
+      return 0;
     }
   };
 
