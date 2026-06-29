@@ -1,12 +1,13 @@
 /*
 ----------------------------------------------------------------------------
- KEN_ExtraDamagePlus v1.0.0
+ KEN_ExtraDamagePlus v1.0.1
 ----------------------------------------------------------------------------
  (C)2024 KEN
  This software is released under the MIT License.
  http://opensource.org/licenses/mit-license.php
 ----------------------------------------------------------------------------
  Version
+ 1.0.1 2025/06/29 スキル・アイテム固有の追加ダメージタグ(ExtraDamage)を追加
  1.0.0 2024/11/23 初版
 ----------------------------------------------------------------------------
 */
@@ -14,7 +15,7 @@
  * @target MZ
  * @plugindesc 追加ダメージプラグイン
  * @author KEN
- * @version 1.0.0
+ * @version 1.0.1
  * @url https://raw.githubusercontent.com/t-kendama/RPGMakerMZ/refs/heads/master/KEN_ExtraDamagePlus.js
  * 
  * @help
@@ -53,6 +54,14 @@
  * 数式で用いられる計算式はExtraDamageBuffと同じです。
  * （a:スキル使用者, b:ターゲット であることに注意ください）
  * 
+ * <ExtraDamage:数値 or 数式>
+ * 記述欄： スキル・アイテム
+ * そのスキル・アイテム固有の追加ダメージを設定します。
+ * 装備・ステートの追加ダメージとは独立して加算されます。
+ * 例．
+ * <ExtraDamage:50> 使用時に50の追加ダメージが発生します
+ * <ExtraDamage:a.mat * 0.3> 使用者の魔法力30%の追加ダメージが発生します
+ *
  * <InvalidExtraDamage>
  * 記述欄： アイテム・スキル
  * このタグが設定されたアイテム・スキルは追加ダメージが適用されなくなります。
@@ -235,6 +244,10 @@
     }
     for(const formula of target.getExtraDamageDebuffFormula()) {
       result += this.evalExtraDamage(formula, target);
+    }
+    const itemFormula = this.item().meta.ExtraDamage;
+    if (itemFormula) {
+      result += this.evalExtraDamage(itemFormula, target);
     }
 
     return result;
