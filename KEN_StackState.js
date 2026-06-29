@@ -5,8 +5,9 @@
  http://opensource.org/licenses/mit-license.php
 ----------------------------------------------------------------------------
  Version
+ 1.1.4 2026/06/30 showStateTurnタグ追加（ステートのメモ欄でターン数をアイコン上に表示する機能）
+                  StackHpDamageInflictOnce/StackMpDamageInflictOnceタグ追加
  1.1.3 2026/06/22 StackHpDamageInflict/StackMpDamageInflictタグ追加
- 1.1.2 2026/06/22 スタック数の評価式に対応
  1.1.1 2026/02/12 StackStateInflictタグ効果が正常に動作していなかった不具合修正
  1.1.0 2025/06/06 職業欄のメモ機能を追加
  1.0.9 2025/06/01 会心時にスタックを増減するスキル機能を追加
@@ -32,7 +33,7 @@
 */
 /*:
  * @target MZ
- * @plugindesc 累積ステートプラグイン (v1.1.3)
+ * @plugindesc 累積ステートプラグイン (v1.1.4)
  * @author KEN
  * @url https://raw.githubusercontent.com/t-kendama/RPGMakerMZ/refs/heads/master/KEN_StackState.js
  * 
@@ -164,6 +165,18 @@
  * 属性IDを指定すると、その属性IDを使用した時のみスタックが増減します。
  * ダメージが0の場合、効果は発動しません。
  *
+ * <StackHpDamageInflictOnce[ステートID]:スタック増減値, 属性ID（省略可）>
+ * 記述欄：武器・防具・ステート
+ * HPダメージを与えた時、攻撃した側のスタックが増減します。
+ * StackHpDamageInflictと異なり、1アクション中に1回のみ発動します。
+ * 連続攻撃でも1回だけスタックが増減します。
+ *
+ * <StackMpDamageInflictOnce[ステートID]:スタック増減値, 属性ID（省略可）>
+ * 記述欄：武器・防具・ステート
+ * MPダメージを与えた時、攻撃した側のスタックが増減します。
+ * StackMpDamageInflictと異なり、1アクション中に1回のみ発動します。
+ * 連続攻撃でも1回だけスタックが増減します。
+ *
  * <StackStateApply[ステートID]:スタック増減値, ステートID or カテゴリ名※(省略可)>
  * 記述欄：武器・防具・ステート
  * ステートを付与した時、攻撃対象のスタックが増減します。
@@ -254,6 +267,16 @@
  * ※この設定を使用する場合、「ターン数とスタック同期」をOFFにすることを推奨します
  * 
  * 
+ * -------------------------    ターン数表示    -------------------------
+ *
+ * <showStateTurn>
+ * 記述欄：ステート
+ * 戦闘中、残りターン数をステートアイコン上に表示します。
+ * 累積ステートとして登録されていないステートにも使用可能です。
+ * 累積ステートで「戦闘中スタック数を表示」がONの場合はスタック数が優先されます。
+ * ターン数が無期限（0）の場合は表示されません。
+ *
+ *
  * -------------------------  スクリプト  -------------------------
  * $gameActors.actor(アクターID).stateStack(ステートID)
  * アクターのスタック値を取得。
@@ -635,7 +658,7 @@
 
 var KEN = KEN || {};
 KEN.StackState = {
-    version: "1.0.8", // バージョン情報
+    version: "1.1.4", // バージョン情報
     isLoaded: true    // このプラグインがロードされていることを示すフラグ
 };
 
@@ -897,18 +920,19 @@ KEN.StackState = {
 
   // スタック一覧を取得（アイコン描画用）
   Game_BattlerBase.prototype.iconStackList = function() {
-    // 条件：累積ステートかつアイコンが設定されている
-    // かつ アイコンIDが1以上
     const battler = this;
     const statesWithIcons = battler.states().filter(state => state.iconIndex > 0);
     return statesWithIcons.map(function(state) {
-      if(StackStateConfig.isStackState(state.id) ){
-        if(StackStateConfig.isDisplayStack(state.id)) {
+      if (StackStateConfig.isStackState(state.id)) {
+        if (StackStateConfig.isDisplayStack(state.id)) {
           return battler.stateStack(state.id);
         }
+      } else if (state.meta["showStateTurn"]) {
+        const turn = battler._stateTurns[state.id];
+        return (turn !== undefined && turn > 0) ? turn : NaN;
       }
       return NaN;
-    });    
+    });
   };
 
   Game_BattlerBase.prototype.gainStack = function(stateId, value) {
@@ -1408,6 +1432,12 @@ KEN.StackState = {
     return [elementId];
   }
 
+  const _Game_Action_makeTargets_stack = Game_Action.prototype.makeTargets;
+  Game_Action.prototype.makeTargets = function() {
+    this._stackInflictOnceFlags = {};
+    return _Game_Action_makeTargets_stack.call(this);
+  };
+
   const _Game_Action_applyItemUserEffect = Game_Action.prototype.applyItemUserEffect;
   Game_Action.prototype.applyItemUserEffect = function(target) {
     _Game_Action_applyItemUserEffect.call(this, target);
@@ -1513,6 +1543,22 @@ KEN.StackState = {
           this.subject().gainStack(Number(stateId), Number(stackValue));
         }
       });
+
+      // 与ダメージ時のスタック処理（攻撃者自身・1アクション1回）
+      const stackStateTraitsInflictOnce = this.subject().getStackStateTrait("StackHpDamageInflictOnce");
+      const flags = this._stackInflictOnceFlags || {};
+      Object.entries(stackStateTraitsInflictOnce).forEach(([stateId, stackDataArray]) => {
+        const onceKey = "hp_" + stateId;
+        if (flags[onceKey]) return;
+        const stackValue = stackDataArray[0];
+        const requiredElementId = stackDataArray.length > 1 ? stackDataArray[1] : null;
+
+        if (this.isHpDamageOrDrain() && matchElementId(elements, requiredElementId)) {
+          this.subject().gainStack(Number(stateId), Number(stackValue));
+          flags[onceKey] = true;
+        }
+      });
+      this._stackInflictOnceFlags = flags;
     }
   };
 
@@ -1554,6 +1600,22 @@ KEN.StackState = {
           this.subject().gainStack(Number(stateId), Number(stackValue));
         }
       });
+
+      // 与ダメージ時のスタック処理（攻撃者自身・1アクション1回）
+      const stackStateTraitsInflictOnce = this.subject().getStackStateTrait("StackMpDamageInflictOnce");
+      const flags = this._stackInflictOnceFlags || {};
+      Object.entries(stackStateTraitsInflictOnce).forEach(([stateId, stackDataArray]) => {
+        const onceKey = "mp_" + stateId;
+        if (flags[onceKey]) return;
+        const stackValue = stackDataArray[0];
+        const requiredElementId = stackDataArray.length > 1 ? stackDataArray[1] : null;
+
+        if (this.isMpDamageOrDrain() && matchElementId(elementId, requiredElementId)) {
+          this.subject().gainStack(Number(stateId), Number(stackValue));
+          flags[onceKey] = true;
+        }
+      });
+      this._stackInflictOnceFlags = flags;
     }
   };
 
@@ -1839,8 +1901,10 @@ KEN.StackState = {
 
   // アイコン描画更新
   const _Sprite_StateIcon_updateIcon = Sprite_StateIcon.prototype.updateIcon;
-  Sprite_StateIcon.prototype.updateIcon = function() {    
-    if(this._battler.isStackStateAffected()) {
+  Sprite_StateIcon.prototype.updateIcon = function() {
+    const needsCustomDraw = this._battler.isStackStateAffected() ||
+      this._battler.states().some(s => s.iconIndex > 0 && s.meta["showStateTurn"]);
+    if (needsCustomDraw) {
       const icons = [];
       let stacks = [];
       if (this.shouldDisplay()) {
@@ -1850,19 +1914,19 @@ KEN.StackState = {
       if (icons.length > 0) {
         this._animationIndex++;
         if (this._animationIndex >= icons.length) {
-            this._animationIndex = 0;
+          this._animationIndex = 0;
         }
         this._iconIndex = icons[this._animationIndex];
         this._stackNum = stacks[this._animationIndex];
       } else {
         this._animationIndex = 0;
         this._iconIndex = 0;
-        this._stackNum = NaN;        
+        this._stackNum = NaN;
       }
     } else {
       this._stackNum = NaN;
-      _Sprite_StateIcon_updateIcon.call(this);      
-    }    
+      _Sprite_StateIcon_updateIcon.call(this);
+    }
   };
 
   const _Sprite_StateIcon_updateFrame = Sprite_StateIcon.prototype.updateFrame;
